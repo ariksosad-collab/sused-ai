@@ -15,7 +15,7 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS + Стрелочка справа вверху + Кот поверх Manage app (без дергающихся анимаций)
+# CSS + Стрелочка слева вверху + Кот поверх Manage app
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -186,16 +186,16 @@ if st.session_state.sidebar_state:
         else:
             st.info("История пуста.")
 
-# Шапка: Название слева, а стрелочка управления чатами строго СДЕЛАНА СПРАВА
-col_title, col_btn = st.columns([5, 2])
-with col_title:
-    st.title("🤖 Sused AI Pro Max")
-with col_btn:
+# Шапка со стрелочкой слева вверху для управления чатами
+col_arrow, col_title = st.columns([1, 15])
+with col_arrow:
     st.markdown("<br>", unsafe_allow_html=True)
-    arrow_label = "Чаты ⬅️" if st.session_state.sidebar_state else "Чаты ➡️"
-    if st.button(arrow_label, help="Открыть/Закрыть сохраненные чаты", use_container_width=True):
+    arrow_symbol = "◀" if st.session_state.sidebar_state else "▶"
+    if st.button(arrow_symbol, help="Открыть/Закрыть сохраненные чаты", use_container_width=True):
         st.session_state.sidebar_state = not st.session_state.sidebar_state
         st.rerun()
+with col_title:
+    st.title("🤖 Sused AI Pro Max")
 
 # Радужная полоса
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
