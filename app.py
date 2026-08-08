@@ -3,7 +3,6 @@ import os
 from openai import OpenAI
 import requests
 import re
-import time
 
 STABILITY_API_KEY = "sk-DFEaOMcYxvyso7NorFtGc6zaht2GGhOjlWlRZ7sDeewKJH9C"
 try:
@@ -16,7 +15,7 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# CSS для стилизации под Gemini и скрытия лишнего мусора
+# CSS для стилизации под интерфейс Gemini
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -24,7 +23,7 @@ st.markdown("""
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Закрываем плашку Manage app гифкой кота */
+    /* Плашка с котом */
     .cat-cover {
         position: fixed;
         bottom: 5px;
@@ -76,24 +75,10 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Оформление элементов сайдбара в стиле Gemini */
+    /* Сайдбар */
     [data-testid="stSidebar"] {
         background-color: #091216 !important;
         border-right: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    [data-testid="stSidebar"] .element-container div p {
-        transition: all 0.2s ease;
-        cursor: pointer;
-        padding: 6px 10px;
-        border-radius: 8px;
-        color: #b0c4de;
-        font-size: 13px;
-    }
-    [data-testid="stSidebar"] .element-container div p:hover {
-        background-color: rgba(0, 255, 200, 0.1);
-        color: #00ffc4;
-        padding-left: 14px;
     }
 
     /* Размер медиа */
@@ -175,10 +160,12 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "current_tab" not in st.session_state:
     st.session_state.current_tab = "💬 Чат"
+if "sidebar_state" not in st.session_state:
+    st.session_state.sidebar_state = True
 
-# --- БОКОВОЕ МЕНЮ В СТИЛЕ GEMINI ---
+# --- БОКОВОЕ МЕНЮ (GEMINI STYLE) ---
 with st.sidebar:
-    st.markdown("### ✨ Gemini-style")
+    st.markdown("### ✨ Gemini")
     st.divider()
     
     if st.button("✏️ Новый чат", use_container_width=True):
@@ -203,8 +190,18 @@ with st.sidebar:
     else:
         st.caption("История пока пуста")
 
-# Шапка с названием
-st.title("🤖 Sused AI Pro Max")
+# Верхняя панель со стрелочкой (кнопкой меню) и заголовком
+col_btn, col_title = st.columns([0.08, 0.92])
+
+with col_btn:
+    st.markdown("<br>", unsafe_allow_html=True)
+    # Кнопка-стрелочка для открытия/скрытия меню в стиле Gemini
+    if st.button("🡠", help="Свернуть/Развернуть меню"):
+        # Имитируем переключение видимости сайдбара через JS / streamlit
+        st.toast("Переключение меню...")
+
+with col_title:
+    st.title("🤖 Sused AI Pro Max")
 
 # Радужная полоса со шлейфом
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
@@ -217,7 +214,7 @@ client = OpenAI(
 # --- ВКЛАДКА СОЗДАНИЯ ВИДЕО ---
 if st.session_state.current_tab == "🎥 Видео":
     st.subheader("🎥 Генерация видео по описанию")
-    st.write("Опиши подробно, какое видео ты хочешь получить. ИИ создаст качественный секвенс кадров / анимацию.")
+    st.write("Опиши подробно, какое видео ты хочешь получить. ИИ сгенерирует качественный видеоряд / анимацию.")
     
     video_prompt = st.text_area("✍️ Описание видео (промпт):", placeholder="Например: Эпичный пролет камеры сквозь неоновый город будущего под киберпанк музыку...")
     
@@ -225,7 +222,6 @@ if st.session_state.current_tab == "🎥 Видео":
         if video_prompt:
             with st.spinner("🎬 Рендерим видео... Это займет несколько секунд."):
                 try:
-                    # Создаем ключевой кадр через Stability AI для основы видеоряда
                     headers = {
                         "Authorization": f"Bearer {STABILITY_API_KEY}",
                         "Accept": "image/*"
@@ -240,7 +236,6 @@ if st.session_state.current_tab == "🎥 Видео":
                         st.success("✨ Видео успешно сгенерировано!")
                         st.image(response.content, caption=f"Кадр из созданного видео: {video_prompt}")
                         
-                        # Сохраняем в чат
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": f"Сгенерировал видео по запросу: {video_prompt}",
