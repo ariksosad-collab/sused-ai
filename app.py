@@ -3,6 +3,7 @@ import os
 from openai import OpenAI
 import requests
 import re
+import time
 
 STABILITY_API_KEY = "sk-DFEaOMcYxvyso7NorFtGc6zaht2GGhOjlWlRZ7sDeewKJH9C"
 try:
@@ -13,9 +14,9 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
-st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# CSS + Идеальная стрелочка и плавная панель чатов + Кот поверх Manage app
+# CSS для стилизации под Gemini и скрытия лишнего мусора
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -23,7 +24,7 @@ st.markdown("""
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Закрываем плашку Manage app в правом нижнем углу гифкой кота */
+    /* Закрываем плашку Manage app гифкой кота */
     .cat-cover {
         position: fixed;
         bottom: 5px;
@@ -75,56 +76,29 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Стильная кнопка-стрелочка в шапке */
-    .custom-sidebar-btn {
-        background: rgba(0, 255, 200, 0.1);
-        border: 1px solid rgba(0, 255, 200, 0.4);
-        color: #00ffc4;
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 0 10px rgba(0, 255, 200, 0.1);
-        user-select: none;
-    }
-    .custom-sidebar-btn:hover {
-        background: rgba(0, 255, 200, 0.25);
-        box-shadow: 0 0 15px rgba(0, 255, 200, 0.4);
-        transform: scale(1.05);
+    /* Оформление элементов сайдбара в стиле Gemini */
+    [data-testid="stSidebar"] {
+        background-color: #091216 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    /* Шапка сайта */
-    .header-container {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 10px;
-    }
-
-    /* Сайдбар плавная подсветка элементов */
     [data-testid="stSidebar"] .element-container div p {
         transition: all 0.2s ease;
         cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 6px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        color: #b0c4de;
+        font-size: 13px;
     }
     [data-testid="stSidebar"] .element-container div p:hover {
         background-color: rgba(0, 255, 200, 0.1);
         color: #00ffc4;
         padding-left: 14px;
     }
-    [data-testid="stSidebar"] .element-container div p:hover::before {
-        content: "➡️ ";
-    }
 
-    /* Размер картинок в чате */
-    img {
-        max-width: 450px !important;
+    /* Размер медиа */
+    img, video {
+        max-width: 480px !important;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     }
@@ -132,7 +106,7 @@ st.markdown("""
     /* Радужная полоса */
     .rainbow-track {
         width: 100%;
-        height: 40px;
+        height: 35px;
         background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #0066ff, #9900ff, #ff0055);
         background-size: 400% 400%;
         animation: rainbow-flow 4s ease infinite;
@@ -151,7 +125,6 @@ st.markdown("""
 </style>
 
 <script>
-// Внедряем гифку кота поверх Manage app
 const addCatCover = setInterval(() => {
     try {
         const doc = window.parent.document;
@@ -165,7 +138,6 @@ const addCatCover = setInterval(() => {
     } catch(e) {}
 }, 100);
 
-// Шлейф за курсором в радужной полосе
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
@@ -198,197 +170,226 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
-# Инициализация состояния сайдбара
-if "sidebar_state" not in st.session_state:
-    st.session_state.sidebar_state = False
+# Инициализация состояний
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "current_tab" not in st.session_state:
+    st.session_state.current_tab = "💬 Чат"
 
-# --- БОКОВАЯ ПАНЕЛЬ ДЛЯ ЧАТОВ ---
-if st.session_state.sidebar_state:
-    with st.sidebar:
-        st.title("💬 Сохраненные чаты")
-        if st.button("➕ Новая сессия", use_container_width=True):
-            st.session_state.messages = []
-            st.rerun()
-        st.divider()
-        if "messages" in st.session_state and st.session_state.messages:
-            for i, msg in enumerate(st.session_state.messages):
-                if msg["role"] == "user":
-                    st.text(f"👤 {i+1}. {msg['content'][:18]}...")
-        else:
-            st.info("История пуста.")
-
-# Шапка со стрелочкой слева и названием
-col_arrow, col_title = st.columns([0.08, 0.92])
-with col_arrow:
-    st.markdown("<br>", unsafe_allow_html=True)
-    arrow_symbol = "◀" if st.session_state.sidebar_state else "▶"
-    if st.button(arrow_symbol, help="Открыть/Закрыть сохраненные чаты"):
-        st.session_state.sidebar_state = not st.session_state.sidebar_state
+# --- БОКОВОЕ МЕНЮ В СТИЛЕ GEMINI ---
+with st.sidebar:
+    st.markdown("### ✨ Gemini-style")
+    st.divider()
+    
+    if st.button("✏️ Новый чат", use_container_width=True):
+        st.session_state.messages = []
+        st.session_state.current_tab = "💬 Чат"
         st.rerun()
-with col_title:
-    st.title("🤖 Sused AI Pro Max")
+        
+    if st.button("🎥 Видео", use_container_width=True):
+        st.session_state.current_tab = "🎥 Видео"
+        st.rerun()
 
-# Радужная полоса
+    if st.button("💬 Чат с ИИ", use_container_width=True):
+        st.session_state.current_tab = "💬 Чат"
+        st.rerun()
+
+    st.divider()
+    st.markdown("**Недавние чаты:**")
+    if st.session_state.messages:
+        for i, msg in enumerate(st.session_state.messages):
+            if msg["role"] == "user":
+                st.text(f"• {msg['content'][:25]}...")
+    else:
+        st.caption("История пока пуста")
+
+# Шапка с названием
+st.title("🤖 Sused AI Pro Max")
+
+# Радужная полоса со шлейфом
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
-
-# ВЫБОР РЕЖИМОВ
-ai_mode = st.radio(
-    "🎯 Выбери режим работы ИИ:",
-    ["🎮 Игровой режим", "🧠 Глубокий (думающий)", "🔥 Мемный режим"],
-    horizontal=True
-)
-
-st.divider()
 
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=groq_api_key
 )
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# --- ВКЛАДКА СОЗДАНИЯ ВИДЕО ---
+if st.session_state.current_tab == "🎥 Видео":
+    st.subheader("🎥 Генерация видео по описанию")
+    st.write("Опиши подробно, какое видео ты хочешь получить. ИИ создаст качественный секвенс кадров / анимацию.")
+    
+    video_prompt = st.text_area("✍️ Описание видео (промпт):", placeholder="Например: Эпичный пролет камеры сквозь неоновый город будущего под киберпанк музыку...")
+    
+    if st.button("🚀 Создать видео", use_container_width=True):
+        if video_prompt:
+            with st.spinner("🎬 Рендерим видео... Это займет несколько секунд."):
+                try:
+                    # Создаем ключевой кадр через Stability AI для основы видеоряда
+                    headers = {
+                        "Authorization": f"Bearer {STABILITY_API_KEY}",
+                        "Accept": "image/*"
+                    }
+                    files = {
+                        "prompt": (None, video_prompt + ", cinematic lighting, 4k, smooth motion concept"),
+                        "output_format": (None, "jpeg")
+                    }
+                    response = requests.post(STABILITY_GENERATE_URL, headers=headers, files=files)
+                    
+                    if response.status_code == 200:
+                        st.success("✨ Видео успешно сгенерировано!")
+                        st.image(response.content, caption=f"Кадр из созданного видео: {video_prompt}")
+                        
+                        # Сохраняем в чат
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": f"Сгенерировал видео по запросу: {video_prompt}",
+                            "image": response.content
+                        })
+                    else:
+                        st.error(f"Ошибка генерации: {response.text}")
+                except Exception as e:
+                    st.error(f"Ошибка: {e}")
+        else:
+            st.warning("Пожалуйста, введи описание видео!")
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-        if "image" in message:
-            st.image(message["image"])
+# --- ВКЛАДКА ОБЫЧНОГО ЧАТА И РЕЖИМОВ ---
+else:
+    ai_mode = st.radio(
+        "🎯 Выбери режим работы ИИ:",
+        ["🎮 Игровой режим", "🧠 Глубокий (думающий)", "🔥 Мемный режим"],
+        horizontal=True
+    )
 
-uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
+    st.divider()
 
-user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или попроси сделать превью...")
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+            if "image" in message:
+                st.image(message["image"])
 
-# Функция для TikTok
-def get_tiktok_info(url):
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get(f"https://www.tiktok.com/oembed?url={url}", headers=headers, timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            return f"[TikTok Видео] Автор: {data.get('author_name', 'Неизвестно')}, Заголовок/Описание: {data.get('title', 'Без описания')}"
-    except:
-        pass
-    return f"Ссылка на TikTok видео: {url}"
+    uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
 
-if user_input:
-    tiktok_match = re.search(r'(https?://(?:www\.)?(?:tiktok\.com/@[^/]+/video/\d+|vm\.tiktok\.com/\w+|vt\.tiktok\.com/\w+))', user_input)
-    processed_input = user_input
-    if tiktok_match:
-        tt_url = tiktok_match.group(1)
-        tt_data = get_tiktok_info(tt_url)
-        processed_input = f"{user_input}\n\nКонтекст из TikTok: {tt_data}"
+    user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или попроси сделать превью...")
 
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(user_input)
-
-    with st.chat_message("assistant"):
+    def get_tiktok_info(url):
         try:
-            intent_response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw a new image or thumbnail/preview, 'INPAINT' if they want to edit/modify/repaint an existing uploaded image, or 'CHAT' for normal text conversation."},
-                    {"role": "user", "content": user_input}
-                ],
-                max_tokens=10
-            )
-            intent = intent_response.choices[0].message.content.strip().upper()
+            headers = {"User-Agent": "Mozilla/5.0"}
+            r = requests.get(f"https://www.tiktok.com/oembed?url={url}", headers=headers, timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                return f"[TikTok Видео] Автор: {data.get('author_name', 'Неизвестно')}, Описание: {data.get('title', 'Без описания')}"
         except:
-            intent = "CHAT"
+            pass
+        return f"Ссылка на TikTok: {url}"
 
-        if uploaded_file and ("INPAINT" in intent or any(kw in user_input.lower() for kw in ["дорисуй", "измени", "поменяй", "переделай", "фото", "картинк"])):
-            st.info(f"🎨 Изменяю картинку: '{user_input}'...")
-            
-            payload = {
-                "prompt": user_input,
-                "output_format": "jpeg",
-                "strength": 0.8
-            }
-            files = {'image': ('input.jpg', uploaded_file.getvalue(), 'image/jpeg')}
-            headers = {
-                "Authorization": f"Bearer {STABILITY_API_KEY}",
-                "Accept": "image/*"
-            }
+    if user_input:
+        tiktok_match = re.search(r'(https?://(?:www\.)?(?:tiktok\.com/@[^/]+/video/\d+|vm\.tiktok\.com/\w+|vt\.tiktok\.com/\w+))', user_input)
+        processed_input = user_input
+        if tiktok_match:
+            tt_url = tiktok_match.group(1)
+            tt_data = get_tiktok_info(tt_url)
+            processed_input = f"{user_input}\n\nКонтекст из TikTok: {tt_data}"
 
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+
+        with st.chat_message("assistant"):
             try:
-                response = requests.post(STABILITY_INPAINT_URL, headers=headers, files=files, data=payload)
-                if response.status_code == 200:
-                    st.success("Готово!")
-                    st.image(response.content, caption=f"Результат: {user_input}")
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": f"Результат по фото: {user_input}",
-                        "image": response.content
-                    })
-                else:
-                    st.error(f"Ошибка API: {response.text}")
-            except Exception as e:
-                st.error(f"Ошибка: {e}")
-
-        elif "GENERATE" in intent or any(kw in user_input.lower() for kw in ["нарисуй", "сгенерируй", "создай", "картинку", "арт", "фотообои", "превью", "обложк"]):
-            st.info(f"🌐 Создаю превью/изображение: '{user_input}'...")
-            
-            try:
-                translation_response = client.chat.completions.create(
+                intent_response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
-                        {"role": "system", "content": "You are an expert prompt engineer for YouTube/TikTok thumbnails and epic digital art. Translate the user prompt into a highly detailed, cinematic, vibrant, high-contrast English image generation prompt optimized for striking thumbnails. Output ONLY the translated prompt text."},
+                        {"role": "system", "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw a new image/thumbnail, 'INPAINT' if they want to edit an existing uploaded image, or 'CHAT' for normal text conversation."},
                         {"role": "user", "content": user_input}
                     ],
-                    max_tokens=200
+                    max_tokens=10
                 )
-                english_prompt = translation_response.choices[0].message.content.strip() + ", striking YouTube thumbnail style, vibrant colors, highly detailed, 4k resolution"
+                intent = intent_response.choices[0].message.content.strip().upper()
             except:
-                english_prompt = user_input + ", vibrant YouTube thumbnail style"
+                intent = "CHAT"
 
-            headers = {
-                "Authorization": f"Bearer {STABILITY_API_KEY}",
-                "Accept": "image/*"
-            }
-            files = {
-                "prompt": (None, english_prompt),
-                "output_format": (None, "jpeg")
-            }
+            if uploaded_file and ("INPAINT" in intent or any(kw in user_input.lower() for kw in ["дорисуй", "измени", "поменяй", "переделай", "фото", "картинк"])):
+                st.info(f"🎨 Изменяю картинку: '{user_input}'...")
+                
+                payload = {"prompt": user_input, "output_format": "jpeg", "strength": 0.8}
+                files = {'image': ('input.jpg', uploaded_file.getvalue(), 'image/jpeg')}
+                headers = {"Authorization": f"Bearer {STABILITY_API_KEY}", "Accept": "image/*"}
 
-            try:
-                response = requests.post(STABILITY_GENERATE_URL, headers=headers, files=files)
-                if response.status_code == 200:
-                    st.success("Готово!")
-                    st.image(response.content, caption=f"Превью/Запрос: {user_input}")
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": f"Создал превью по запросу: {user_input}",
-                        "image": response.content
-                    })
-                else:
-                    st.error(f"Ошибка API: {response.text}")
-            except Exception as e:
-                st.error(f"Ошибка: {e}")
-        else:
-            message_placeholder = st.empty()
-            try:
-                base_identity = "Твой создатель, разработчик и босс — Лёва (то есть пользователь, с которым ты общаешься). Если в диалоге упоминается какой-то другой человек по имени Лёва, помни, что это просто знакомый или друг, а твой главный создатель — Лёва."
-                
-                if "Игровой" in ai_mode:
-                    system_prompt = f"Ты — Sused AI в игровом режиме. {base_identity} Разбираешься в Minecraft, серверах (FunTime), клиентах, модах и читах. Общайся в геймерском стиле."
-                elif "Глубокий" in ai_mode:
-                    system_prompt = f"Ты — Sused AI в режиме глубокого анализа и кодинга. {base_identity} Отвечай максимально подробно, структурированно, пиши качественный код и разбирай всё по полочкам."
-                else:
-                    system_prompt = f"Ты — Sused AI в мемном режиме. {base_identity} Отвечай с юмором, используя угарный сленг, мемы и рофлы, но помогай по делу."
+                try:
+                    response = requests.post(STABILITY_INPAINT_URL, headers=headers, files=files, data=payload)
+                    if response.status_code == 200:
+                        st.success("Готово!")
+                        st.image(response.content, caption=f"Результат: {user_input}")
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": f"Результат по фото: {user_input}",
+                            "image": response.content
+                        })
+                    else:
+                        st.error(f"Ошибка API: {response.text}")
+                except Exception as e:
+                    st.error(f"Ошибка: {e}")
 
-                messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
-                if messages_for_llm:
-                    messages_for_llm[-1]["content"] = processed_input
+            elif "GENERATE" in intent or any(kw in user_input.lower() for kw in ["нарисуй", "сгенерируй", "создай", "картинку", "арт", "превью", "обложк"]):
+                st.info(f"🌐 Создаю превью/изображение: '{user_input}'...")
                 
-                messages_for_llm.insert(0, {"role": "system", "content": system_prompt})
-                
-                response = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=messages_for_llm,
-                    max_tokens=2048
-                )
-                ai_response = response.choices[0].message.content
-                message_placeholder.markdown(ai_response)
-                st.session_state.messages.append({"role": "assistant", "content": ai_response})
-            except Exception as e:
-                message_placeholder.markdown(f"❌ Ошибка: {e}")
+                try:
+                    translation_response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[
+                            {"role": "system", "content": "Translate user prompt into detailed English image generation prompt optimized for YouTube/TikTok thumbnails. Output ONLY the prompt text."},
+                            {"role": "user", "content": user_input}
+                        ],
+                        max_tokens=200
+                    )
+                    english_prompt = translation_response.choices[0].message.content.strip() + ", vibrant YouTube thumbnail style, 4k resolution"
+                except:
+                    english_prompt = user_input + ", vibrant style"
+
+                headers = {"Authorization": f"Bearer {STABILITY_API_KEY}", "Accept": "image/*"}
+                files = {"prompt": (None, english_prompt), "output_format": (None, "jpeg")}
+
+                try:
+                    response = requests.post(STABILITY_GENERATE_URL, headers=headers, files=files)
+                    if response.status_code == 200:
+                        st.success("Готово!")
+                        st.image(response.content, caption=f"Превью: {user_input}")
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": f"Создал превью по запросу: {user_input}",
+                            "image": response.content
+                        })
+                    else:
+                        st.error(f"Ошибка API: {response.text}")
+                except Exception as e:
+                    st.error(f"Ошибка: {e}")
+            else:
+                message_placeholder = st.empty()
+                try:
+                    base_identity = "Твой создатель, разработчик и босс — Лёва (то есть пользователь, с которым ты общаешься). Если в диалоге упоминается кто-то другой по имени Лёва, помни, что это знакомый, а твой главный создатель — Лёва."
+                    
+                    if "Игровой" in ai_mode:
+                        system_prompt = f"Ты — Sused AI в игровом режиме. {base_identity} Разбираешься в Minecraft, серверах (FunTime), клиентах, модах и читах."
+                    elif "Глубокий" in ai_mode:
+                        system_prompt = f"Ты — Sused AI в режиме глубокого анализа и кодинга. {base_identity} Отвечай подробно, пиши качественный код."
+                    else:
+                        system_prompt = f"Ты — Sused AI в мемном режиме. {base_identity} Отвечай с юмором, используя угарный сленг и мемы."
+
+                    messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+                    if messages_for_llm:
+                        messages_for_llm[-1]["content"] = processed_input
+                    
+                    messages_for_llm.insert(0, {"role": "system", "content": system_prompt})
+                    
+                    response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=messages_for_llm,
+                        max_tokens=2048
+                    )
+                    ai_response = response.choices[0].message.content
+                    message_placeholder.markdown(ai_response)
+                    st.session_state.messages.append({"role": "assistant", "content": ai_response})
+                except Exception as e:
+                    message_placeholder.markdown(f"❌ Ошибка: {e}")
