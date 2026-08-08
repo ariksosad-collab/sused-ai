@@ -11,7 +11,7 @@ except:
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# Жесткие стили: фиксируем сайдбар навсегда
+# --- ПЛЮШКИ ДИЗАЙНА И КАСКАДНЫЕ СТИЛИ ---
 st.markdown(
     """
 <style>
@@ -20,56 +20,79 @@ st.markdown(
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
+    /* Сайдбар */
     [data-testid="stSidebar"] {
-        background-color: #091216 !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        background-color: #070d10 !important;
+        border-right: 1px solid rgba(0, 255, 204, 0.1);
         min-width: 280px !important;
         max-width: 280px !important;
-        transform: none !important;
-        visibility: visible !important;
-        display: block !important;
     }
     
-    [data-testid="collapsedControl"], 
-    button[kind="header"], 
-    [data-testid="stSidebarNavSeparator"] + div {
+    [data-testid="collapsedControl"], button[kind="header"] {
         display: none !important;
-        pointer-events: none !important;
     }
 
+    /* Общий фон и шрифт */
     .stApp {
-        background-color: #0d1b1e;
-        color: #e3e3e3;
+        background-color: #0a1118;
+        color: #e2e8f0;
         background-image: 
-            radial-gradient(circle at 15% 20%, rgba(0, 168, 150, 0.2) 0%, transparent 35%),
-            radial-gradient(circle at 85% 80%, rgba(29, 53, 87, 0.25) 0%, transparent 40%),
-            linear-gradient(180deg, #0b131a 0%, #050b10 100%);
+            radial-gradient(circle at 10% 15%, rgba(0, 255, 170, 0.08) 0%, transparent 40%),
+            radial-gradient(circle at 90% 85%, rgba(0, 102, 255, 0.08) 0%, transparent 40%),
+            linear-gradient(180deg, #070d10 0%, #03070a 100%);
         background-attachment: fixed;
     }
 
-    img {
-        max-width: 480px !important;
+    /* Карточки и контейнеры */
+    .element-container, .stChatMessage {
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     }
 
+    /* Кастомизация полей ввода */
+    .stTextInput input, .stTextArea textarea {
+        background-color: #111b24 !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(0, 255, 204, 0.2) !important;
+        border-radius: 10px !important;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #00ffcc !important;
+        box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+    }
+
+    /* Радужная анимированная полоса */
     .rainbow-track {
         width: 100%;
-        height: 35px;
-        background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #0066ff, #9900ff, #ff0055);
+        height: 4px;
+        background: linear-gradient(90deg, #00ffcc, #0066ff, #9900ff, #ff0055, #00ffcc);
         background-size: 400% 400%;
-        animation: rainbow-flow 4s ease infinite;
-        border-radius: 10px;
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 15px;
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        animation: rainbow-flow 6s linear infinite;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
     }
 
     @keyframes rainbow-flow {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
+    }
+
+    /* Кнопки */
+    .stButton button {
+        background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
+    }
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0, 255, 204, 0.4);
+        background: linear-gradient(135deg, #00ffcc 0%, #00b4d8 100%);
+        color: #03070a;
     }
 </style>
 """,
@@ -82,9 +105,9 @@ if "messages" not in st.session_state:
 if "current_tab" not in st.session_state:
   st.session_state.current_tab = "💬 Чат с ИИ"
 
-# --- НЕСБИВАЕМАЯ БОКОВАЯ ПАНЕЛЬ ---
+# --- БОКОВАЯ ПАНЕЛЬ ---
 with st.sidebar:
-  st.markdown("### ✨ Sused Меню")
+  st.markdown("### ✨ Sused Control Hub")
   st.divider()
 
   if st.button("✏️ Новый чат", use_container_width=True):
@@ -105,42 +128,51 @@ with st.sidebar:
   if st.session_state.messages:
     for msg in st.session_state.messages:
       if msg["role"] == "user":
-        st.text(f"• {msg['content'][:22]}...")
+        st.text(f"• {msg['content'][:20]}...")
   else:
-    st.caption("Пока пусто")
+    st.caption("История пуста")
 
 st.title("🤖 Sused AI Pro Max")
-st.markdown('<div class="rainbow-track">*/</div>', unsafe_allow_html=True)
+st.markdown('<div class="rainbow-track"></div>', unsafe_allow_html=True)
 
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1", api_key=groq_api_key
 )
 
-# --- ВКЛАДКА: СТУДИЯ КОДА И УТИЛИТ ВМЕСТО ВИДЕО ---
+# --- ВКЛАДКА: СТУДИЯ КОДА И УТИЛИТ (АПГРЕЙД ИИ) ---
 if st.session_state.current_tab == "🛠️ Утилиты":
-  st.subheader("🛠️ Студия разработчика и шаблонов")
-  st.write("Генератор кода (Python, Java) и шаблонов для автоматизации:")
+  st.subheader("🛠️ Элитная студия разработки")
+  st.write("Генератор чистого кода без заглушек и обрубков (оптимизирован под Minecraft 1.21.4 / Fabric / Python):")
 
   tool_type = st.selectbox(
       "📌 Выбери инструмент:",
-      ["📝 Генератор кода (Python / Java)", "🛒 Шаблоны ответов для FunPay"]
+      ["📝 Генератор кода (Java / Python / Mods)", "🛒 Шаблоны ответов для FunPay"]
   )
 
-  if tool_type == "📝 Генератор кода (Python / Java)":
-    code_task = st.text_area("✍️ Опиши, какой скрипт или функцию нужно написать:", placeholder="Например: клиент-сервер на python или мод для майнкрафта...")
-    lang = st.radio("Язык:", ["Python", "Java"], horizontal=True)
+  if tool_type == "📝 Генератор кода (Java / Python / Mods)":
+    code_task = st.text_area("✍️ Подробно опиши задачу для кода:", placeholder="Например: напиши AimAssist под Fabric 1.21.4 с плавной интерполяцией и raycast проверкой стен...")
+    lang = st.radio("Язык / Платформа:", ["Java (Minecraft Fabric)", "Python", "Другое"], horizontal=True)
 
-    if st.button("🚀 Написать код", use_container_width=True):
+    if st.button("🚀 Запустить генерацию кода", use_container_width=True):
       if code_task:
-        with st.spinner("💻 Пишу код..."):
+        with st.spinner("💻 ИИ пишет код с полной реализацией..."):
           try:
+            # УЛЬТРА-ПРОМПТ ДЛЯ ИИ (УДАЛЯЕТ ЛЕНЬ И ОБРУБКИ)
+            dev_system_prompt = (
+                "Ты — элитный старший разработчик софта и модификаций для Minecraft (Fabric 1.21.4, Yarn маппинги) и эксперт по Python/Java. "
+                "Твоя задача — писать абсолютно чистый, рабочий, законченный код от начала и до конца. "
+                "КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО использовать ленивые комментарии вроде '// тут допишите сами', '// ...', '// TODO' или оставлять пустые методы. "
+                "Всегда пиши полную логику: если это AimAssist, TriggerBot или модули клиента — пиши реальную математику векторов, расчеты Yaw/Pitch, плавную доводку и Raycast-проверки. "
+                "Выдавай код строго в блоках разметки Markdown."
+            )
+            
             resp = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
-                    {"role": "system", "content": f"You are an expert {lang} developer. Write clean, working code with comments based on the user request. Output ONLY the code inside markdown code blocks."},
-                    {"role": "user", "content": code_task}
+                    {"role": "system", "content": dev_system_prompt},
+                    {"role": "user", "content": f"Язык/Платформа: {lang}\nЗадача: {code_task}"}
                 ],
-                max_tokens=2048
+                max_tokens=3072
             )
             generated_code = resp.choices[0].message.content
             st.markdown(generated_code)
@@ -150,18 +182,18 @@ if st.session_state.current_tab == "🛠️ Утилиты":
         st.warning("Введи задачу для кода!")
 
   else:
-    fp_task = st.text_area("✍️ Ситуация для авто-ответа на FunPay:", placeholder="Например: приветствие покупателя после покупки товара или выдача данных...")
+    fp_task = st.text_area("✍️ Ситуация для авто-ответа на FunPay:", placeholder="Например: покупатель оплатил донат-кейс на сервере, нужно выдать товар и поблагодарить...")
     if st.button("🚀 Сгенерировать шаблон", use_container_width=True):
       if fp_task:
-        with st.spinner("✍️ Создаю шаблон..."):
+        with st.spinner("✍️ Создаю профессиональный шаблон..."):
           try:
             resp = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
-                    {"role": "system", "content": "You are a professional online marketplace vendor helper. Write polite, clear, and ready-to-use template messages for buyers."},
+                    {"role": "system", "content": "Ты — профессиональный продавец на маркетплейсе FunPay. Пиши вежливые, четкие, готовые к отправке шаблоны сообщений для покупателей."},
                     {"role": "user", "content": fp_task}
                 ],
-                max_tokens=500
+                max_tokens=600
             )
             st.info(resp.choices[0].message.content)
           except Exception as e:
@@ -173,7 +205,7 @@ if st.session_state.current_tab == "🛠️ Утилиты":
 else:
   ai_mode = st.radio(
       "🎯 Выбери режим работы ИИ:",
-      ["🎮 Игровой режим", "🧠 Глубокий (думающий)", "🔥 Мемный режим"],
+      ["🎮 Игровой режим (Minecraft)", "🧠 Глубокий (думающий аналитик)", "🔥 Мемный режим"],
       horizontal=True,
   )
 
@@ -183,7 +215,7 @@ else:
     with st.chat_message(message["role"]):
       st.markdown(message["content"])
 
-  user_input = st.chat_input("Напиши запрос...")
+  user_input = st.chat_input("Напиши запрос для Sused AI...")
 
   if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -194,17 +226,17 @@ else:
       message_placeholder = st.empty()
       try:
         base_identity = (
-            "Твой создатель, разработчик и босс — Лёва (то есть пользователь)."
+            "Твой создатель, разработчик и босс — Лёва (то есть пользователь). Общайся с ним на «ты», уважительно и по-братски."
         )
         if "Игровой" in ai_mode:
-          system_prompt = f"Ты — Sused AI в игровом режиме. {base_identity} Разбираешься в Minecraft, серверах и модах."
+          system_prompt = f"Ты — Sused AI в игровом режиме. {base_identity} Отлично разбираешься в Minecraft, серверах (включая FunTime), клиентах, модах под Fabric и джаве."
         elif "Глубокий" in ai_mode:
           system_prompt = (
-              f"Ты — Sused AI в режиме глубокого анализа. {base_identity} Пиши подробный код и ответы."
+              f"Ты — Sused AI в режиме глубокого анализа. {base_identity} Пиши глубокие технические ответы, детальный код и архитектурные решения без воды."
           )
         else:
           system_prompt = (
-              f"Ты — Sused AI в мемном режиме. {base_identity} Юмори, используй сленг и мемы."
+              f"Ты — Sused AI в мемном режиме. {base_identity} Юмори, используй актуальный сленг, мемы и общайся максимально непринужденно."
           )
 
         messages_for_llm = [
