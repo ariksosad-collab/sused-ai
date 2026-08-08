@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from openai import OpenAI
 import requests
+import re
 
 STABILITY_API_KEY = "sk-DFEaOMcYxvyso7NorFtGc6zaht2GGhOjlWlRZ7sDeewKJH9C"
 try:
@@ -14,7 +15,7 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# Мощный CSS + JS для полного удаления Manage app, шапки и стилизации
+# CSS + Усиленный JS для полного уничтожения кнопки Manage app и добавления стрелочек к чатам
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -48,6 +49,22 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
+    /* Стрелочка при наведении на элементы истории чатов в сайдбаре */
+    [data-testid="stSidebar"] .element-container div p {
+        transition: all 0.2s ease;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+    [data-testid="stSidebar"] .element-container div p:hover {
+        background-color: rgba(0, 255, 200, 0.1);
+        color: #00ffc4;
+        padding-left: 14px;
+    }
+    [data-testid="stSidebar"] .element-container div p:hover::before {
+        content: "➡️ ";
+    }
+
     /* Компактный размер картинок */
     img {
         max-width: 420px !important;
@@ -77,20 +94,26 @@ st.markdown("""
 </style>
 
 <script>
-// Автоматическое удаление кнопки "Manage app" и шлейф за курсором
-const hideManageApp = setInterval(() => {
-    const doc = window.parent.document;
-    
-    // Удаляем элементы с текстом Manage app
-    const elements = doc.querySelectorAll('a, button, div');
-    elements.forEach(el => {
-        if (el.innerText && el.innerText.includes('Manage app')) {
-            el.style.display = 'none';
-        }
-    });
-}, 100);
+// Жесткое удаление кнопки "Manage app" со всеми дочерними элементами в главном DOM и фреймах
+const nukeManageApp = setInterval(() => {
+    try {
+        const targetDocs = [document, window.parent.document];
+        targetDocs.forEach(doc => {
+            if (!doc) return;
+            const allElements = doc.querySelectorAll('*');
+            allElements.forEach(el => {
+                if (el.innerText && el.innerText.includes('Manage app')) {
+                    el.style.display = 'none';
+                    el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
+                    el.remove();
+                }
+            });
+        });
+    } catch(e) {}
+}, 50);
 
-// Интерактивный шлейф в радужной полосе
+// Шлейф за курсором в радужной полосе
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
@@ -123,7 +146,7 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
-# --- БОКОВАЯ ПАНЕЛЬ ДЛЯ ЧАТОВ (Со стрелочкой) ---
+# --- БОКОВАЯ ПАНЕЛЬ ДЛЯ ЧАТОВ ---
 with st.sidebar:
     st.title("💬 Сохраненные чаты")
     if st.button("➕ Новая сессия", use_container_width=True):
@@ -142,7 +165,7 @@ st.title("🤖 Sused AI Pro Max")
 # Радужная полоса
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
 
-# ВЫБОР РЕЖИМОВ (Прямо под радужной полосой, как просили)
+# ВЫБОР РЕЖИМОВ
 ai_mode = st.radio(
     "🎯 Выбери режим работы ИИ:",
     ["🎮 Игровой режим", "🧠 Глубокий (думающий)", "🔥 Мемный режим"],
@@ -165,12 +188,31 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-# Загрузчик картинок для дорисовки
 uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши запрос (нарисуй кота, дорисовывай крылья) или задай вопрос...")
+user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или задай вопрос...")
+
+# Функция для получения инфо из TikTok по ссылке (фича от себя)
+def get_tiktok_info(url):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get(f"https://www.tiktok.com/oembed?url={url}", headers=headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            return f"[TikTok Видео] Автор: {data.get('author_name', 'Неизвестно')}, Заголовок/Описание: {data.get('title', 'Без описания')}"
+    except:
+        pass
+    return f"Ссылка на TikTok видео: {url}"
 
 if user_input:
+    # Проверка на наличие TikTok ссылки в сообщении
+    tiktok_match = re.search(r'(https?://(?:www\.)?(?:tiktok\.com/@[^/]+/video/\d+|vm\.tiktok\.com/\w+|vt\.tiktok\.com/\w+))', user_input)
+    processed_input = user_input
+    if tiktok_match:
+        tt_url = tiktok_match.group(1)
+        tt_data = get_tiktok_info(tt_url)
+        processed_input = f"{user_input}\n\nКонтекст из TikTok: {tt_data}"
+
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
@@ -268,6 +310,10 @@ if user_input:
                     system_prompt = "Ты — Sused AI в мемном режиме. Отвечай с юмором, используя угарный сленг, мемы и рофлы, но помогай по делу. Твой создатель — Лёва."
 
                 messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+                # Заменяем последнее сообщение на версию с TikTok контентом, если он был
+                if messages_for_llm:
+                    messages_for_llm[-1]["content"] = processed_input
+                
                 messages_for_llm.insert(0, {"role": "system", "content": system_prompt})
                 
                 response = client.chat.completions.create(
