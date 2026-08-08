@@ -14,24 +14,15 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# CSS: Полное скрытие Manage app, верхней шапки, сохранение стрелки панели и фона
+# Мощный CSS + JS для полного удаления Manage app, шапки и стилизации
 st.markdown("""
 <style>
-    /* Скрываем верхние и нижние сервисные панели Streamlit (включая Manage app) */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
-    [data-testid="stStatusWidget"] {display: none !important;}
-    div[class*="viewerBadge"] {display: none !important;}
-    div[class*="styles_viewerBadge"] {display: none !important;}
     
-    /* Скрытие кнопки Manage app внизу справа */
-    .stApp > footer {display: none !important;}
-    [data-testid="manage-app-button"] {display: none !important;}
-    iframe[title="streamlit_app"] {margin-bottom: 0px !important;}
-    
-    /* Анимированный фон с падающими каплями дождя */
+    /* Анимированный фон с дождем */
     .stApp {
         background-color: #0d1b1e;
         color: #e3e3e3;
@@ -57,7 +48,7 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Компактный размер для сгенерированных картинок */
+    /* Компактный размер картинок */
     img {
         max-width: 420px !important;
         border-radius: 12px;
@@ -67,14 +58,14 @@ st.markdown("""
     /* Анимированная радужная полоса */
     .rainbow-track {
         width: 100%;
-        height: 45px;
+        height: 40px;
         background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #0066ff, #9900ff, #ff0055);
         background-size: 400% 400%;
         animation: rainbow-flow 4s ease infinite;
         border-radius: 10px;
         position: relative;
         overflow: hidden;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
     }
 
@@ -86,7 +77,20 @@ st.markdown("""
 </style>
 
 <script>
-// Интерактивный шлейф за курсором
+// Автоматическое удаление кнопки "Manage app" и шлейф за курсором
+const hideManageApp = setInterval(() => {
+    const doc = window.parent.document;
+    
+    // Удаляем элементы с текстом Manage app
+    const elements = doc.querySelectorAll('a, button, div');
+    elements.forEach(el => {
+        if (el.innerText && el.innerText.includes('Manage app')) {
+            el.style.display = 'none';
+        }
+    });
+}, 100);
+
+// Интерактивный шлейф в радужной полосе
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
@@ -105,7 +109,7 @@ const checkBanner = setInterval(() => {
             const colors = ['#ff0055', '#ff7f00', '#ffff00', '#00ff66', '#00ffff', '#0066ff', '#9900ff'];
             dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
             dot.style.boxShadow = '0 0 12px ' + dot.style.backgroundColor;
-            document.body.appendChild(dot);
+            window.parent.document.body.appendChild(dot);
             setTimeout(() => {
                 dot.style.transition = 'all 0.4s ease-out';
                 dot.style.transform = 'scale(0.1) translateY(-20px)';
@@ -119,17 +123,8 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
-# --- БОКОВАЯ ПАНЕЛЬ (ОТКРЫВАЕТСЯ ПО СТРЕЛКЕ) ---
+# --- БОКОВАЯ ПАНЕЛЬ ДЛЯ ЧАТОВ (Со стрелочкой) ---
 with st.sidebar:
-    st.title("⚙️ Настройки и Режимы")
-    
-    # Выбор режима
-    ai_mode = st.selectbox(
-        "Выбери режим ИИ:",
-        ["🎮 Игровой режим", "🧠 Глубокий (думающий)", "🔥 Мемный режим"]
-    )
-    
-    st.divider()
     st.title("💬 Сохраненные чаты")
     if st.button("➕ Новая сессия", use_container_width=True):
         st.session_state.messages = []
@@ -147,6 +142,15 @@ st.title("🤖 Sused AI Pro Max")
 # Радужная полоса
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
 
+# ВЫБОР РЕЖИМОВ (Прямо под радужной полосой, как просили)
+ai_mode = st.radio(
+    "🎯 Выбери режим работы ИИ:",
+    ["🎮 Игровой режим", "🧠 Глубокий (думающий)", "🔥 Мемный режим"],
+    horizontal=True
+)
+
+st.divider()
+
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=groq_api_key
@@ -161,10 +165,10 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-# Загрузка файла для редактирования/дорисовки
+# Загрузчик картинок для дорисовки
 uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши запрос (например: нарисуй кота, дорисовывай крылья) или задай вопрос...")
+user_input = st.chat_input("Напиши запрос (нарисуй кота, дорисовывай крылья) или задай вопрос...")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -257,11 +261,11 @@ if user_input:
             message_placeholder = st.empty()
             try:
                 if "Игровой" in ai_mode:
-                    system_prompt = "Ты — Sused AI в игровом режиме. Отлично разбираешься в играх, Minecraft, серверах (например, FunTime), клиентах, модах и читах. Общайся в геймерском стиле. Твой создатель — Лёва."
+                    system_prompt = "Ты — Sused AI в игровом режиме. Разбираешься в Minecraft, серверах (FunTime), клиентах, модах и читах. Общайся в геймерском стиле. Твой создатель — Лёва."
                 elif "Глубокий" in ai_mode:
-                    system_prompt = "Ты — Sused AI в режиме глубокого анализа и кодинга. Отвечай развернуто, структурированно, подробно и давай качественные технические решения. Твой создатель — Лёва."
+                    system_prompt = "Ты — Sused AI в режиме глубокого анализа и кодинга. Отвечай максимально подробно, структурированно, пиши качественный код и разбирай всё по полочкам. Твой создатель — Лёва."
                 else:
-                    system_prompt = "Ты — Sused AI в мемном режиме. Отвечай с юмором, используя угарный сленг, мемы и рофлы, но давая понятный ответ. Твой создатель — Лёва."
+                    system_prompt = "Ты — Sused AI в мемном режиме. Отвечай с юмором, используя угарный сленг, мемы и рофлы, но помогай по делу. Твой создатель — Лёва."
 
                 messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
                 messages_for_llm.insert(0, {"role": "system", "content": system_prompt})
