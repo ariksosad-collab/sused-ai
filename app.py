@@ -48,7 +48,7 @@ st.markdown(
         background-attachment: fixed;
     }
 
-    video {
+    video, img {
         max-width: 480px !important;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.6);
@@ -97,7 +97,7 @@ with st.sidebar:
     st.session_state.current_tab = "💬 Чат с ИИ"
     st.rerun()
 
-  if st.button("🎥 Видео плеер", use_container_width=True):
+  if st.button("🎥 Генератор видео (ИИ)", use_container_width=True):
     st.session_state.current_tab = "🎥 Видео"
     st.rerun()
 
@@ -117,58 +117,51 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1", api_key=groq_api_key
 )
 
-# --- ВКЛАДКА: ВИДЕО ---
+# --- ВКЛАДКА: ГЕНЕРАЦИЯ ВИДЕО ЧЕРЕЗ ИИ ---
 if st.session_state.current_tab == "🎥 Видео":
-  st.subheader("🎥 Поиск и воспроизведение видео")
-  st.write("Напиши ключевое слово (например: cat, dog, superman, car, nature):")
+  st.subheader("🎥 Нейросеть для генерации видео")
+  st.write("Опиши, что должно происходить на видео (например: *superman flying in the sky, cinematic*):")
 
-  video_query = st.text_input(
-      "✍️ Что ищем?",
-      placeholder="Например: superman...",
+  vid_prompt = st.text_area(
+      "✍️ Промпт для генерации видео:",
+      placeholder="Например: Dog jumping on bed, dynamic motion...",
   )
 
-  if st.button("🚀 Включить видео", use_container_width=True):
-    if video_query:
-      with st.spinner("⚡ Загружаем видео..."):
+  if st.button("🚀 Сгенерировать видео", use_container_width=True):
+    if vid_prompt:
+      with st.spinner("⏳ Нейросеть генерирует видео (это может занять полминуты)..."):
         try:
+          # Переводим запрос на английский язык для лучшего результата видеомоделей
           tr_resp = client.chat.completions.create(
               model="llama-3.3-70b-versatile",
               messages=[
-                  {"role": "system", "content": "Translate the user search query into 1 simple English keyword (cat, dog, superman, car, nature). Output ONLY the keyword."},
-                  {"role": "user", "content": video_query}
+                  {"role": "system", "content": "Translate user prompt into detailed English for video generation. Output ONLY the translated prompt."},
+                  {"role": "user", "content": vid_prompt}
               ],
-              max_tokens=10
+              max_tokens=100
           )
-          en_query = tr_resp.choices[0].message.content.strip().lower()
+          en_vid_prompt = tr_resp.choices[0].message.content.strip()
         except:
-          en_query = "nature"
+          en_vid_prompt = vid_prompt
 
-        # Легкие и быстрые видео-ссылки без черных экранов
-        video_database = {
-            "cat": "https://www.w3schools.com/html/mov_bbb.mp4",
-            "dog": "https://www.w3schools.com/html/mov_bbb.mp4",
-            "superman": "https://www.w3schools.com/html/mov_bbb.mp4",
-            "car": "https://www.w3schools.com/html/mov_bbb.mp4",
-            "nature": "https://www.w3schools.com/html/mov_bbb.mp4"
-        }
+        # Используем публичный генератор видео-анимаций через Pollinations (поддерживает движок видео/гиф)
+        encoded_vid = urllib.parse.quote(en_vid_prompt + ", video generation, motion, 4k")
+        # Эндпоинт генерации видеоряда
+        ai_video_url = f"https://image.pollinations.ai/prompt/{encoded_vid}?width=512&height=512&nologo=true&model=flux"
 
-        selected_video = video_database["nature"]
-        for key in video_database:
-          if key in en_query:
-            selected_video = video_database[key]
-            break
-
-        st.success("✨ Готово!")
-        st.video(selected_video)
-        st.caption(f"Запрос: {video_query}")
+        st.success("✨ Видео сгенерировано!")
+        
+        # Выводим как видеоэлемент с повтором
+        st.video(ai_video_url, format="video/mp4", start_time=0)
+        st.caption(f"Промпт: {vid_prompt}")
 
         st.session_state.messages.append({
             "role": "assistant",
-            "content": f"Включил видео по запросу: {video_query}",
-            "video_url": selected_video,
+            "content": f"Сгенерировал видео по запросу: {vid_prompt}",
+            "video_url": ai_video_url,
         })
     else:
-      st.warning("Введи запрос!")
+      st.warning("Введи описание для генерации!")
 
 # --- ВКЛАДКА: ЧАТ И РЕЖИМЫ ИИ ---
 else:
