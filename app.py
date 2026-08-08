@@ -3,7 +3,6 @@ import os
 from openai import OpenAI
 import requests
 
-# Ключи
 STABILITY_API_KEY = "sk-DFEaOMcYxvyso7NorFtGc6zaht2GGhOjlWlRZ7sDeewKJH9C"
 try:
     groq_api_key = st.secrets["GROQ_API_KEY"]
@@ -15,64 +14,109 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# Дизайн: скрываем верхнюю панель Streamlit (Share, GitHub и т.д.) и делаем радужный курсор
-st.markdown("""
+# Инициализация настроек темы в сессии
+if "bg_theme" not in st.session_state:
+    st.session_state.bg_theme = "Темная"
+if "fx_effect" not in st.session_state:
+    st.session_state.fx_effect = "Без эффекта"
+
+# Цветовые схемы фона
+bg_colors = {
+    "Темная": "#131314",
+    "Светлая": "#f0f2f6",
+    "Неоновая": "#0a0a1a",
+    "Киберпанк": "#1a001a"
+}
+text_colors = {
+    "Темная": "#e3e3e3",
+    "Светлая": "#111111",
+    "Неоновая": "#00ffff",
+    "Киберпанк": "#ff00ff"
+}
+
+current_bg = bg_colors.get(st.session_state.bg_theme, "#131314")
+current_txt = text_colors.get(st.session_state.bg_theme, "#e3e3e3")
+
+# HTML/CSS/JS для интерфейса, верхней радужной панели, курсора и погодных эффектов
+st.markdown(f"""
 <style>
-    .stApp {
-        background-color: #131314;
-        color: #e3e3e3;
+    .stApp {{
+        background-color: {current_bg};
+        color: {current_txt};
+    }}
+    /* Скрываем лишний стандартный мусор, но оставляем стрелку сайдбара */
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+
+    /* Длинное верхнее поле с радужным шлейфом */
+    #rainbow-banner {{
+        width: 100%;
+        height: 120px;
+        background: linear-gradient(90deg, #1f1f23, #2d2d38, #1f1f23);
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 20px;
+        border: 1px solid #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-    /* Полное скрытие стандартной шапки и меню Streamlit справа сверху */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stToolbar {display: none;}
-    
-    /* Стилизация сайдбара */
-    [data-testid="stSidebar"] {
-        background-color: #1a1a1c;
-        border-left: 1px solid #333;
-    }
+    #rainbow-banner h2 {{
+        background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #9900ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
+        margin: 0;
+    }}
 </style>
 
 <script>
-// Яркий радужный след за курсором
+// Радужный курсор внутри верхнего баннера
+const banner = window.parent.document.getElementById('rainbow-banner') || document.body;
+
 document.addEventListener('mousemove', function(e) {
-    let cursorTrail = document.createElement('div');
-    cursorTrail.style.position = 'fixed';
-    cursorTrail.style.left = e.pageX + 'px';
-    cursorTrail.style.top = e.pageY + 'px';
-    cursorTrail.style.width = '14px';
-    cursorTrail.style.height = '14px';
-    cursorTrail.style.borderRadius = '50%';
-    cursorTrail.style.pointerEvents = 'none';
-    cursorTrail.style.zIndex = '999999';
+    let x = e.clientX;
+    let y = e.clientY;
     
-    const colors = ['#ff0055', '#ff7f00', '#ffff00', '#00ff66', '#00ffff', '#0066ff', '#9900ff'];
-    cursorTrail.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    cursorTrail.style.boxShadow = '0 0 12px ' + cursorTrail.style.backgroundColor;
-    
-    document.body.appendChild(cursorTrail);
-    
-    setTimeout(() => {
-        cursorTrail.style.transition = 'all 0.6s ease';
-        cursorTrail.style.transform = 'scale(0.2)';
-        cursorTrail.style.opacity = '0';
-    }, 40);
-    
-    setTimeout(() => {
-        cursorTrail.remove();
-    }, 640);
+    // Проверяем, находится ли курсор в верхней зоне экрана (где баннер)
+    if (y < 220) {
+        let dot = document.createElement('div');
+        dot.style.position = 'fixed';
+        dot.style.left = x + 'px';
+        dot.style.top = y + 'px';
+        dot.style.width = '12px';
+        dot.style.height = '12px';
+        dot.style.borderRadius = '50%';
+        dot.style.pointerEvents = 'none';
+        dot.style.zIndex = '999999';
+        
+        const colors = ['#ff0055', '#ff7f00', '#ffff00', '#00ff66', '#00ffff', '#0066ff', '#9900ff'];
+        dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        dot.style.boxShadow = '0 0 10px ' + dot.style.backgroundColor;
+        
+        document.body.appendChild(dot);
+        
+        setTimeout(() => {
+            dot.style.transition = 'all 0.5s ease';
+            dot.style.transform = 'scale(0.2)';
+            dot.style.opacity = '0';
+        }, 30);
+        
+        setTimeout(() => {
+            dot.remove();
+        }, 530);
+    }
 });
 </script>
 """, unsafe_allow_html=True)
 
-# --- ПРАВАЯ ВЫДВИГАЮЩАЯСЯ ПАНЕЛЬ (СОХРАНЕННЫЕ ЧАТЫ) ---
+# --- ПРАВАЯ ПАНЕЛЬ СОХРАНЕННЫХ ЧАТОВ ---
 with st.sidebar:
     st.title("💬 Сохраненные чаты")
-    st.markdown("История твоих запросов и сессий.")
+    st.markdown("История твоих диалогов.")
     
-    if st.button("➕ Новая сессия / Очистить чат", use_container_width=True):
+    if st.button("➕ Новая сессия", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
         
@@ -82,13 +126,69 @@ with st.sidebar:
         st.subheader("Диалоги:")
         for i, msg in enumerate(st.session_state.messages):
             if msg["role"] == "user":
-                st.text(f"👤 {i+1}. {msg['content'][:22]}...")
+                st.text(f"👤 {i+1}. {msg['content'][:20]}...")
     else:
-        st.info("Пока пусто.")
+        st.info("История пуста.")
 
-# --- ОСНОВНОЙ ЭКРАН ---
-st.title("🤖 Sused AI Pro Max")
+# --- ПУЛЬТ НАСТРОЕК В ПРАВОМ УГЛУ НАД ЧАТom ---
+col_title, col_settings = st.columns([2, 2])
 
+with col_title:
+    st.title("🤖 Sused AI Pro Max")
+
+with col_settings:
+    st.markdown("<div style='text-align: right;'>⚙️ <b>Настройки темы и эффектов</b></div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.session_state.bg_theme = st.selectbox("Фон", ["Темная", "Светлая", "Неоновая", "Киберпанк"], label_visibility="collapsed")
+    with c2:
+        st.session_state.fx_effect = st.selectbox("Эффект", ["Без эффекта", "🌧️ Дождь", "⚡ Молнии/Гроза", "✨ Звезды"], label_visibility="collapsed")
+
+# --- ВЕРХНИЙ ДЛИННЫЙ БАННЕР С РАДУЖНЫМ КУРСОРОМ ---
+st.markdown("""
+<div id="rainbow-banner">
+    <h2>✨ Наведи курсор сюда для радужного шлейфа! ✨</h2>
+</div>
+""", unsafe_allow_html=True)
+
+# --- ВИЗУАЛЬНЫЕ ЭФФЕКТЫ (ДОЖДЬ, МОЛНИИ, ЗВЕЗДЫ) ---
+if st.session_state.fx_effect == "🌧️ Дождь":
+    st.markdown("""
+    <style>
+    @keyframes rain {
+        0% {background-position: 0px 0px;}
+        100% {background-position: -50px 500px;}
+    }
+    .stApp {
+        background-image: linear-gradient(0deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 50px 50px;
+        animation: rain 0.8s linear infinite;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+elif st.session_state.fx_effect == "⚡ Молнии/Гроза":
+    st.markdown("""
+    <style>
+    @keyframes flash {
+        0%, 90%, 95%, 100% {opacity: 1;}
+        92%, 97% {opacity: 0.3; filter: brightness(1.8); background-color: #334466;}
+    }
+    .stApp {
+        animation: flash 4s infinite;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+elif st.session_state.fx_effect == "✨ Звезды":
+    st.markdown("""
+    <style>
+    .stApp {
+        background-image: radial-gradient(white 1px, transparent 0);
+        background-size: 40px 40px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- ЛОГИКА ЧАТА И ГЕНЕРАЦИИ ---
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=groq_api_key
