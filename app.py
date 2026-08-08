@@ -13,15 +13,21 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
+# Устанавливаем сайдбар всегда развернутым
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# Стилизация под Gemini
+# Стили: скрываем кнопку сворачивания сайдбара и лишние элементы
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
+    
+    /* Полностью убираем кнопку сворачивания/стрелочку сайдбара */
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
     
     /* Плашка с котом */
     .cat-cover {
@@ -161,7 +167,7 @@ if "messages" not in st.session_state:
 if "current_tab" not in st.session_state:
     st.session_state.current_tab = "💬 Чат"
 
-# --- БОКОВОЕ МЕНЮ GEMINI ---
+# --- ПОСТОЯННОЕ БОКОВОЕ МЕНЮ ---
 with st.sidebar:
     st.markdown("### ✨ Gemini Меню")
     st.divider()
@@ -188,17 +194,8 @@ with st.sidebar:
     else:
         st.caption("История пока пуста")
 
-# Верхняя панель со стрелочкой и заголовком
-col_btn, col_title = st.columns([0.08, 0.92])
-
-with col_btn:
-    st.markdown("<br>", unsafe_allow_html=True)
-    # Рабочая кнопка-стрелочка
-    if st.button("🡠", help="Меню"):
-        st.rerun()
-
-with col_title:
-    st.title("🤖 Sused AI Pro Max")
+# Заголовок страницы (без стрелочек)
+st.title("🤖 Sused AI Pro Max")
 
 # Радужная полоса со шлейфом
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
@@ -213,7 +210,7 @@ if st.session_state.current_tab == "🎥 Видео":
     st.subheader("🎥 Генерация видео по описанию")
     st.write("Опиши подробно, какое видео ты хочешь получить. ИИ сгенерирует качественный видеоряд / анимацию.")
     
-    video_prompt = st.text_area("✍️ Описание видео (промпт):", placeholder="Например: Эпичный пролет камеры сквозь неоновый город будущего под киберпанк музыку...")
+    video_prompt = st.text_area("✍️ Описание видео (промпт):", placeholder="Например: Cinematic camera sweep through a futuristic neon city...")
     
     if st.button("🚀 Создать видео", use_container_width=True):
         if video_prompt:
