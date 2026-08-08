@@ -14,66 +14,52 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-if "bg_theme" not in st.session_state:
-    st.session_state.bg_theme = "Темная"
-if "fx_effect" not in st.session_state:
-    st.session_state.fx_effect = "Без эффекта"
-
-bg_styles = {
-    "Темная": {"bg": "#131314", "card": "#1e1e24", "text": "#e3e3e3", "border": "#333"},
-    "Светлая": {"bg": "#f4f6f9", "card": "#ffffff", "text": "#222222", "border": "#d1d5db"},
-    "Неоновая": {"bg": "#050510", "card": "#0f0f24", "text": "#00ffff", "border": "#00ffff55"},
-    "Киберпанк": {"bg": "#12001a", "card": "#240036", "text": "#ff00ff", "border": "#ff00ff55"}
-}
-
-t = bg_styles.get(st.session_state.bg_theme, bg_styles["Темная"])
-
-# Чистая строка без f-prefix, избегаем любых синтаксических ошибок Python
+# Чистый темный стиль с анимированным дождем и интерактивной радужной полосой следования за курсором
 st.markdown("""
 <style>
     .stApp {
-        background-color: """ + t["bg"] + """;
-        color: """ + t["text"] + """;
+        background-color: #0b0f19;
+        color: #e3e3e3;
+        background-image: linear-gradient(0deg, rgba(0, 183, 255, 0.08) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(0, 183, 255, 0.03) 1px, transparent 1px);
+        background-size: 50px 80px;
+        animation: falling-rain 0.7s linear infinite;
     }
+    
+    @keyframes falling-rain {
+        0% { background-position: 0px 0px; }
+        100% { background-position: -40px 600px; }
+    }
+
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
-    .rainbow-container {
+    /* Анимированная интерактивная радужная полоса для курсора */
+    .rainbow-track {
         width: 100%;
-        height: 130px;
-        background: linear-gradient(135deg, """ + t["card"] + """, #111116);
-        border-radius: 16px;
+        height: 60px;
+        background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #0066ff, #9900ff, #ff0055);
+        background-size: 400% 400%;
+        animation: rainbow-flow 4s ease infinite;
+        border-radius: 12px;
         position: relative;
         overflow: hidden;
-        margin-bottom: 20px;
-        border: 2px solid """ + t["border"] + """;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: crosshair;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    }
-    .rainbow-container h2 {
-        background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #9900ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 900;
-        margin: 0;
-        z-index: 2;
-        pointer-events: none;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        margin-bottom: 25px;
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+        cursor: pointer;
     }
 
-    div[data-baseweb="select"] > div {
-        background-color: """ + t["card"] + """ !important;
-        color: """ + t["text"] + """ !important;
-        border-color: """ + t["border"] + """ !important;
+    @keyframes rainbow-flow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
 </style>
 
 <script>
+// Интерактивный шлейф и следование радуги за курсором мыши внутри полосы
 const checkBanner = setInterval(() => {
-    const banner = window.parent.document.getElementById('interactive-banner');
+    const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
         banner.onmousemove = function(e) {
             let rect = banner.getBoundingClientRect();
@@ -84,27 +70,27 @@ const checkBanner = setInterval(() => {
             dot.style.position = 'fixed';
             dot.style.left = x + 'px';
             dot.style.top = y + 'px';
-            dot.style.width = '14px';
-            dot.style.height = '14px';
+            dot.style.width = '16px';
+            dot.style.height = '16px';
             dot.style.borderRadius = '50%';
             dot.style.pointerEvents = 'none';
             dot.style.zIndex = '999999';
             
             const colors = ['#ff0055', '#ff7f00', '#ffff00', '#00ff66', '#00ffff', '#0066ff', '#9900ff'];
             dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            dot.style.boxShadow = '0 0 12px ' + dot.style.backgroundColor;
+            dot.style.boxShadow = '0 0 15px ' + dot.style.backgroundColor;
             
             document.body.appendChild(dot);
             
             setTimeout(() => {
-                dot.style.transition = 'all 0.6s ease-out';
-                dot.style.transform = 'scale(0.1) translateY(-20px)';
+                dot.style.transition = 'all 0.5s ease-out';
+                dot.style.transform = 'scale(0.1) translateY(-30px)';
                 dot.style.opacity = '0';
             }, 20);
             
             setTimeout(() => {
                 dot.remove();
-            }, 620);
+            }, 520);
         };
         clearInterval(checkBanner);
     }
@@ -112,53 +98,7 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
-# --- ЖИВЫЕ АНИМИРОВАННЫЕ ЭФФЕКТЫ ФОНА ---
-if st.session_state.fx_effect == "🌧️ Дождь":
-    st.markdown("""
-    <style>
-    @keyframes falling-rain {
-        0% { background-position: 0px 0px; }
-        100% { background-position: -100px 800px; }
-    }
-    .stApp {
-        background-image: linear-gradient(0deg, rgba(0, 183, 255, 0.15) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(0, 183, 255, 0.05) 1px, transparent 1px);
-        background-size: 60px 100px;
-        animation: falling-rain 0.6s linear infinite;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-elif st.session_state.fx_effect == "⚡ Молнии/Гроза":
-    st.markdown("""
-    <style>
-    @keyframes lightning {
-        0%, 85%, 93%, 100% { filter: brightness(1); }
-        88% { filter: brightness(2.2); background-color: #1a2a40; }
-        90% { filter: brightness(0.4); }
-        91% { filter: brightness(2.5); background-color: #ffffff; }
-    }
-    .stApp {
-        animation: lightning 5s infinite;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-elif st.session_state.fx_effect == "✨ Звезды":
-    st.markdown("""
-    <style>
-    @keyframes twinkle {
-        0%, 100% { opacity: 0.3; }
-        50% { opacity: 1; }
-    }
-    .stApp {
-        background-image: radial-gradient(white 1.5px, transparent 0), radial-gradient(cyan 1px, transparent 0);
-        background-size: 70px 70px, 50px 50px;
-        background-position: 0 0, 25px 25px;
-        animation: twinkle 3s ease-in-out infinite;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- ПРАВАЯ ПАНЕЛЬ СОХРАНЕННЫХ ЧАТОВ ---
+# --- ПРАВАЯ ПАНЕЛЬ ИСТОРИИ ---
 with st.sidebar:
     st.title("💬 Сохраненные чаты")
     st.markdown("История твоих диалогов.")
@@ -177,28 +117,12 @@ with st.sidebar:
     else:
         st.info("История пуста.")
 
-# --- ПУЛЬТ НАСТРОЕК В ПРАВОМ УГЛУ ---
-col_title, col_settings = st.columns([2, 2])
+st.title("🤖 Sused AI Pro Max")
 
-with col_title:
-    st.title("🤖 Sused AI Pro Max")
+# Интерактивная радужная полоса
+st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
 
-with col_settings:
-    st.markdown("<div style='text-align: right;'>⚙️ <b>Кастомизация</b></div>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
-        st.session_state.bg_theme = st.selectbox("Тема", ["Темная", "Светлая", "Неоновая", "Киберпанк"], label_visibility="collapsed")
-    with c2:
-        st.session_state.fx_effect = st.selectbox("Эффект", ["Без эффекта", "🌧️ Дождь", "⚡ Молнии/Гроза", "✨ Звезды"], label_visibility="collapsed")
-
-# --- ИНТЕРАКТИВНЫЙ ВЕРХНИЙ БАННЕР С РАДУЖНЫМ ШЛЕЙФОМ ---
-st.markdown("""
-<div id="interactive-banner" class="rainbow-container">
-    <h2>✨ Наведи курсор сюда для крутого радужного шлейфа! ✨</h2>
-</div>
-""", unsafe_allow_html=True)
-
-# --- ЛОГИКА ЧАТА И ГЕНЕРАЦИИ ---
+# --- ИНИЦИАЛИЗАЦИЯ ИСТОРИИ ЧАТА ---
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=groq_api_key
@@ -213,32 +137,78 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-uploaded_file = st.file_uploader("Загрузить фото для редактирования (необязательно)", type=['png', 'jpg', 'jpeg'])
+# Загрузка / вставка картинок для редактирования или домалевок (Inpainting)
+uploaded_file = st.file_uploader("📋 Загрузи или вставь картинку сюда, чтобы дорисовать или изменить её", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши /generate [описание] для картинки или просто общайся")
+user_input = st.chat_input("Напиши текстовый запрос: создай картинку, измени фото или просто задай вопрос...")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    if user_input.startswith("/generate "):
-        raw_prompt = user_input.replace("/generate ", "", 1)
-        with st.chat_message("assistant"):
-            st.info(f"🌐 Перевожу и генерирую: '{raw_prompt}'...")
+    # Умное определение намерения пользователя с помощью LLM (нужно ли генерировать картинку или это обычный чат/дорисовка)
+    with st.chat_message("assistant"):
+        try:
+            # Спрашиваем модель: является ли запрос запросом на генерацию нового изображения
+            intent_response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": "Analyze the user's message. If the user is asking to create, generate, draw, or make an image/picture/art, reply with 'GENERATE'. If they are asking to edit, modify, repaint, or change an uploaded image, reply with 'INPAINT'. Otherwise reply with 'CHAT'."},
+                    {"role": "user", "content": user_input}
+                ],
+                max_tokens=10
+            )
+            intent = intent_response.choices[0].message.content.strip().upper()
+        except:
+            intent = "CHAT"
+
+        if uploaded_file and ("INPAINT" in intent or "ДОРИСУЙ" in user_input.upper() / 1 == 1 or len(user_input) > 0):
+            # Если есть картинка и пользователь просит что-то изменить / дорисовать
+            st.info(f"🎨 Изменяю/дорисовываю фото: '{user_input}'...")
+            
+            payload = {
+                "prompt": user_input,
+                "output_format": "jpeg",
+                "strength": 0.8
+            }
+            files = {'image': ('input.jpg', uploaded_file.getvalue(), 'image/jpeg')}
+            headers = {
+                "Authorization": f"Bearer {STABILITY_API_KEY}",
+                "Accept": "image/*"
+            }
+
+            try:
+                response = requests.post(STABILITY_INPAINT_URL, headers=headers, files=files, data=payload)
+                if response.status_code == 200:
+                    st.success("Готово!")
+                    st.image(response.content, caption=f"Результат: {user_input}")
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": f"Результат по фото: {user_input}",
+                        "image": response.content
+                    })
+                else:
+                    st.error(f"Ошибка API: {response.text}")
+            except Exception as e:
+                st.error(f"Ошибка: {e}")
+
+        elif "GENERATE" in intent or any(kw in user_input.lower() for kw in ["нарисуй", "сгенерируй", "создай картинку", "картинка", "арты", "фото"]):
+            # Если пользователь просит создать картинку
+            st.info(f"🌐 Перевожу и генерирую изображение: '{user_input}'...")
             
             try:
                 translation_response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
                         {"role": "system", "content": "Translate the following user prompt into a detailed English image generation prompt. Output ONLY the translated prompt text, nothing else."},
-                        {"role": "user", "content": raw_prompt}
+                        {"role": "user", "content": user_input}
                     ],
                     max_tokens=200
                 )
                 english_prompt = translation_response.choices[0].message.content.strip()
             except:
-                english_prompt = raw_prompt
+                english_prompt = user_input
 
             headers = {
                 "Authorization": f"Bearer {STABILITY_API_KEY}",
@@ -253,54 +223,18 @@ if user_input:
                 response = requests.post(STABILITY_GENERATE_URL, headers=headers, files=files)
                 if response.status_code == 200:
                     st.success("Готово!")
-                    st.image(response.content, caption=f"Запрос: {raw_prompt}")
+                    st.image(response.content, caption=f"Запрос: {user_input}")
                     st.session_state.messages.append({
                         "role": "assistant",
-                        "content": f"Сгенерировал по запросу: {raw_prompt}",
+                        "content": f"Сгенерировал по запросу: {user_input}",
                         "image": response.content
                     })
                 else:
                     st.error(f"Ошибка API: {response.text}")
             except Exception as e:
                 st.error(f"Ошибка: {e}")
-
-    elif user_input.startswith("/inpainting "):
-        if uploaded_file:
-            prompt_text = user_input.replace("/inpainting ", "", 1)
-            with st.chat_message("assistant"):
-                st.info(f"🎨 Изменяю фото: '{prompt_text}'...")
-                
-                payload = {
-                    "prompt": prompt_text,
-                    "output_format": "jpeg",
-                    "strength": 0.8
-                }
-                files = {'image': ('input.jpg', uploaded_file.getvalue(), 'image/jpeg')}
-                headers = {
-                    "Authorization": f"Bearer {STABILITY_API_KEY}",
-                    "Accept": "image/*"
-                }
-
-                try:
-                    response = requests.post(STABILITY_INPAINT_URL, headers=headers, files=files, data=payload)
-                    if response.status_code == 200:
-                        st.success("Готово!")
-                        st.image(response.content, caption=f"Результат: {prompt_text}")
-                        st.session_state.messages.append({
-                            "role": "assistant", 
-                            "content": f"Результат по фото: {prompt_text}",
-                            "image": response.content
-                        })
-                    else:
-                        st.error(f"Ошибка API: {response.text}")
-                except Exception as e:
-                    st.error(f"Ошибка: {e}")
         else:
-            with st.chat_message("assistant"):
-                st.warning("Сначала загрузи картинку сверху для использования /inpainting!")
-
-    else:
-        with st.chat_message("assistant"):
+            # Обычный текстовый диалог с ассистентом
             message_placeholder = st.empty()
             try:
                 messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
