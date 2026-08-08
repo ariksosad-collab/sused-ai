@@ -13,10 +13,9 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
-# Устанавливаем сайдбар всегда развернутым
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# Стили: скрываем кнопку сворачивания сайдбара и лишние элементы
+# Стили: фиксируем сайдбар, чтобы он всегда был открыт
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -24,11 +23,21 @@ st.markdown("""
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Полностью убираем кнопку сворачивания/стрелочку сайдбара */
+    /* Принудительно показываем и фиксируем сайдбар на экране */
+    [data-testid="stSidebar"] {
+        background-color: #091216 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        min-width: 260px !important;
+        max-width: 260px !important;
+        transform: none !important;
+        visibility: visible !important;
+    }
+    
+    /* Убираем кнопку сворачивания, чтобы она не мешала */
     [data-testid="collapsedControl"] {
         display: none !important;
     }
-    
+
     /* Плашка с котом */
     .cat-cover {
         position: fixed;
@@ -79,12 +88,6 @@ st.markdown("""
     @keyframes drop-rain {
         0% { background-position: 0px 0px; }
         100% { background-position: -10px 60px; }
-    }
-
-    /* Сайдбар */
-    [data-testid="stSidebar"] {
-        background-color: #091216 !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* Размер медиа */
@@ -194,7 +197,7 @@ with st.sidebar:
     else:
         st.caption("История пока пуста")
 
-# Заголовок страницы (без стрелочек)
+# Заголовок страницы
 st.title("🤖 Sused AI Pro Max")
 
 # Радужная полоса со шлейфом
