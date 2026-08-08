@@ -15,7 +15,7 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="collapsed")
 
-# Скрываем стандартный сайдбар Streamlit и делаем свой крутой аналог Gemini через JS/CSS
+# Стили и тот самый надежный JS для анимации меню
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -76,7 +76,7 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Кастомная боковая панель Gemini */
+    /* Выдвижное меню Gemini */
     .gemini-sidebar {
         position: fixed;
         top: 0;
@@ -145,6 +145,7 @@ st.markdown("""
 </style>
 
 <script>
+// Автодобавление плашки с котиком в DOM
 const addCatCover = setInterval(() => {
     try {
         const doc = window.parent.document;
@@ -158,6 +159,7 @@ const addCatCover = setInterval(() => {
     } catch(e) {}
 }, 100);
 
+// Интерактивный шлейф для радужной полосы
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
@@ -196,7 +198,7 @@ if "messages" not in st.session_state:
 if "current_tab" not in st.session_state:
     st.session_state.current_tab = "💬 Чат"
 
-# Обработка кликов из кастомного сайдбара через query_params
+# Обработка навигации через query_params
 params = st.query_params
 if "nav" in params:
     nav_val = params["nav"]
@@ -214,7 +216,7 @@ if "nav" in params:
         st.query_params.clear()
         st.rerun()
 
-# Рендерим HTML кастомного сайдбара и кнопку открытия прямо на странице
+# Рендеринг HTML кастомного меню
 history_html = ""
 if st.session_state.messages:
     for msg in st.session_state.messages:
@@ -237,15 +239,6 @@ st.markdown(f"""
         {history_html}
     </div>
 </div>
-
-<script>
-function toggleGeminiSidebar() {{
-    const sidebar = document.getElementById('gemini-nav');
-    if (sidebar) {{
-        sidebar.classList.toggle('open');
-    }}
-}}
-</script>
 """, unsafe_allow_html=True)
 
 # Верхняя панель со стрелочкой и заголовком
@@ -253,9 +246,12 @@ col_btn, col_title = st.columns([0.08, 0.92])
 
 with col_btn:
     st.markdown("<br>", unsafe_allow_html=True)
-    # Кнопка-стрелочка запускает JavaScript функцию открытия меню
+    # Прямой JavaScript вызов класса .open на элемент меню
     st.markdown("""
-        <button onclick="toggleGeminiSidebar()" style="background: #112226; border: 1px solid rgba(0,255,200,0.3); color: #00ffc4; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s;" title="Открыть меню">🡠</button>
+        <button onclick="
+            const sb = window.parent.document.getElementById('gemini-nav');
+            if(sb) sb.classList.toggle('open');
+        " style="background: #112226; border: 1px solid rgba(0,255,200,0.3); color: #00ffc4; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s;" title="Открыть меню">🡠</button>
     """, unsafe_allow_html=True)
 
 with col_title:
