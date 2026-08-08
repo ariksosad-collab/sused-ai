@@ -2,8 +2,7 @@ import streamlit as st
 import os
 from openai import OpenAI
 
-# Сначала пробуем взять ключ из настроек Streamlit (для интернета),
-# если их нет — берем из переменной окружения (для твоего ПК)
+# Настройка ключа (для сервера Streamlit и для ПК)
 try:
     api_key = st.secrets["GROQ_API_KEY"]
 except:
@@ -18,7 +17,7 @@ st.markdown("""<style>.stApp {background-color: #131314; color: #e3e3e3;}</style
 st.title("🤖 Sused AI")
 
 if not api_key:
-    st.error("Ключ не найден! Зайди в настройки (Secrets) и добавь GROQ_API_KEY")
+    st.error("Ключ не найден! Добавь GROQ_API_KEY в настройки (Secrets).")
     st.stop()
 
 client = OpenAI(
@@ -26,12 +25,17 @@ client = OpenAI(
     api_key=api_key
 )
 
+# Инициализация сообщений с системным промптом про Лёву
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [
+        {"role": "system", "content": "Ты — Sused AI. Твой создатель и разработчик — Лёва. Если тебя спрашивают, кто тебя создал, всегда гордо отвечай, что тебя создал Лёва."}
+    ]
 
+# Отображение истории (пропускаем системное сообщение, чтобы не пугать юзера)
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
 if prompt := st.chat_input("Введите сообщение..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -43,7 +47,7 @@ if prompt := st.chat_input("Введите сообщение..."):
         try:
             response = client.chat.completions.create(
                 model=MODEL_NAME,
-                messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+                messages=st.session_state.messages,
                 max_tokens=2048
             )
             ai_response = response.choices[0].message.content
