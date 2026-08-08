@@ -12,18 +12,26 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
-st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
+# Настройка страницы с минималистичным wide-макетом
+st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="centered")
 
-# Чистый темный стиль с анимированным дождем и интерактивной радужной полосой следования за курсором
+# Стили: минимализм, скрытие верхнего меню Streamlit/GitHub/Share, анимированный дождь и кастомные картинки
 st.markdown("""
 <style>
+    /* Скрываем стандартные элементы Streamlit, Share, GitHub, Header и Footer */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stAppToolbar {display: none !important;}
+    
+    /* Основной фон с анимированным дождем */
     .stApp {
         background-color: #0b0f19;
         color: #e3e3e3;
-        background-image: linear-gradient(0deg, rgba(0, 183, 255, 0.08) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(0, 183, 255, 0.03) 1px, transparent 1px);
+        background-image: linear-gradient(0deg, rgba(0, 183, 255, 0.12) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(0, 183, 255, 0.04) 1px, transparent 1px);
         background-size: 50px 80px;
-        animation: falling-rain 0.7s linear infinite;
+        animation: falling-rain 0.6s linear infinite;
     }
     
     @keyframes falling-rain {
@@ -31,22 +39,25 @@ st.markdown("""
         100% { background-position: -40px 600px; }
     }
 
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* Компактный размер для сгенерированных изображений */
+    img {
+        max-width: 450px !important;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
 
-    /* Анимированная интерактивная радужная полоса для курсора */
+    /* Интерактивная анимированная радужная полоса */
     .rainbow-track {
         width: 100%;
-        height: 60px;
+        height: 45px;
         background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #0066ff, #9900ff, #ff0055);
         background-size: 400% 400%;
         animation: rainbow-flow 4s ease infinite;
-        border-radius: 12px;
+        border-radius: 10px;
         position: relative;
         overflow: hidden;
-        margin-bottom: 25px;
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
-        cursor: pointer;
+        margin-bottom: 20px;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
     }
 
     @keyframes rainbow-flow {
@@ -57,12 +68,11 @@ st.markdown("""
 </style>
 
 <script>
-// Интерактивный шлейф и следование радуги за курсором мыши внутри полосы
+// Шлейф за курсором внутри радужной полосы
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
         banner.onmousemove = function(e) {
-            let rect = banner.getBoundingClientRect();
             let x = e.clientX;
             let y = e.clientY;
             
@@ -70,27 +80,27 @@ const checkBanner = setInterval(() => {
             dot.style.position = 'fixed';
             dot.style.left = x + 'px';
             dot.style.top = y + 'px';
-            dot.style.width = '16px';
-            dot.style.height = '16px';
+            dot.style.width = '12px';
+            dot.style.height = '12px';
             dot.style.borderRadius = '50%';
             dot.style.pointerEvents = 'none';
             dot.style.zIndex = '999999';
             
             const colors = ['#ff0055', '#ff7f00', '#ffff00', '#00ff66', '#00ffff', '#0066ff', '#9900ff'];
             dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            dot.style.boxShadow = '0 0 15px ' + dot.style.backgroundColor;
+            dot.style.boxShadow = '0 0 12px ' + dot.style.backgroundColor;
             
             document.body.appendChild(dot);
             
             setTimeout(() => {
-                dot.style.transition = 'all 0.5s ease-out';
-                dot.style.transform = 'scale(0.1) translateY(-30px)';
+                dot.style.transition = 'all 0.4s ease-out';
+                dot.style.transform = 'scale(0.1) translateY(-20px)';
                 dot.style.opacity = '0';
             }, 20);
             
             setTimeout(() => {
                 dot.remove();
-            }, 520);
+            }, 420);
         };
         clearInterval(checkBanner);
     }
@@ -98,31 +108,24 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
-# --- ПРАВАЯ ПАНЕЛЬ ИСТОРИИ ---
+# --- БОКОВАЯ ПАНЕЛЬ ---
 with st.sidebar:
-    st.title("💬 Сохраненные чаты")
-    st.markdown("История твоих диалогов.")
-    
+    st.title("💬 Чаты")
     if st.button("➕ Новая сессия", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
-        
     st.divider()
-    
     if "messages" in st.session_state and st.session_state.messages:
-        st.subheader("Диалоги:")
         for i, msg in enumerate(st.session_state.messages):
             if msg["role"] == "user":
-                st.text(f"👤 {i+1}. {msg['content'][:20]}...")
-    else:
-        st.info("История пуста.")
+                st.text(f"👤 {i+1}. {msg['content'][:18]}...")
 
 st.title("🤖 Sused AI Pro Max")
 
-# Интерактивная радужная полоса
+# Радужная полоса с интерактивом
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
 
-# --- ИНИЦИАЛИЗАЦИЯ ИСТОРИИ ЧАТА ---
+# Инициализация истории чата
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=groq_api_key
@@ -137,24 +140,23 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-# Загрузка / вставка картинок для редактирования или домалевок (Inpainting)
-uploaded_file = st.file_uploader("📋 Загрузи или вставь картинку сюда, чтобы дорисовать или изменить её", type=['png', 'jpg', 'jpeg'])
+# Удобный инструмент для загрузки / вставки картинок (Inpainting)
+uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши текстовый запрос: создай картинку, измени фото или просто задай вопрос...")
+user_input = st.chat_input("Напиши запрос (нарисуй кота, дорисовывай крылья и т.д.) или задай вопрос...")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # Умное определение намерения пользователя с помощью LLM (нужно ли генерировать картинку или это обычный чат/дорисовка)
     with st.chat_message("assistant"):
+        # Определяем намерение пользователя через LLM
         try:
-            # Спрашиваем модель: является ли запрос запросом на генерацию нового изображения
             intent_response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
-                    {"role": "system", "content": "Analyze the user's message. If the user is asking to create, generate, draw, or make an image/picture/art, reply with 'GENERATE'. If they are asking to edit, modify, repaint, or change an uploaded image, reply with 'INPAINT'. Otherwise reply with 'CHAT'."},
+                    {"role": "system", "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw a new image, 'INPAINT' if they want to edit/modify/repaint an existing uploaded image, or 'CHAT' for normal text conversation."},
                     {"role": "user", "content": user_input}
                 ],
                 max_tokens=10
@@ -163,9 +165,8 @@ if user_input:
         except:
             intent = "CHAT"
 
-        if uploaded_file and ("INPAINT" in intent or "ДОРИСУЙ" in user_input.upper() / 1 == 1 or len(user_input) > 0):
-            # Если есть картинка и пользователь просит что-то изменить / дорисовать
-            st.info(f"🎨 Изменяю/дорисовываю фото: '{user_input}'...")
+        if uploaded_file and ("INPAINT" in intent or any(kw in user_input.lower() for kw in ["дорисуй", "измени", "поменяй", "переделай", "фото"])):
+            st.info(f"🎨 Изменяю картинку: '{user_input}'...")
             
             payload = {
                 "prompt": user_input,
@@ -193,15 +194,14 @@ if user_input:
             except Exception as e:
                 st.error(f"Ошибка: {e}")
 
-        elif "GENERATE" in intent or any(kw in user_input.lower() for kw in ["нарисуй", "сгенерируй", "создай картинку", "картинка", "арты", "фото"]):
-            # Если пользователь просит создать картинку
-            st.info(f"🌐 Перевожу и генерирую изображение: '{user_input}'...")
+        elif "GENERATE" in intent or any(kw in user_input.lower() for kw in ["нарисуй", "сгенерируй", "создай", "картинку", "арт", "фотообои"]):
+            st.info(f"🌐 Генерирую изображение: '{user_input}'...")
             
             try:
                 translation_response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
-                        {"role": "system", "content": "Translate the following user prompt into a detailed English image generation prompt. Output ONLY the translated prompt text, nothing else."},
+                        {"role": "system", "content": "Translate the user prompt into a detailed English image generation prompt. Output ONLY the translated prompt text."},
                         {"role": "user", "content": user_input}
                     ],
                     max_tokens=200
@@ -234,7 +234,6 @@ if user_input:
             except Exception as e:
                 st.error(f"Ошибка: {e}")
         else:
-            # Обычный текстовый диалог с ассистентом
             message_placeholder = st.empty()
             try:
                 messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
