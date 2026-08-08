@@ -48,7 +48,7 @@ st.markdown(
         background-attachment: fixed;
     }
 
-    img, video {
+    video {
         max-width: 480px !important;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.6);
@@ -97,7 +97,7 @@ with st.sidebar:
     st.session_state.current_tab = "💬 Чат с ИИ"
     st.rerun()
 
-  if st.button("🎥 Поиск реального видео", use_container_width=True):
+  if st.button("🎥 Видео плеер", use_container_width=True):
     st.session_state.current_tab = "🎥 Видео"
     st.rerun()
 
@@ -117,60 +117,58 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1", api_key=groq_api_key
 )
 
-# --- ВКЛАДКА: ПОИСК И ВЫВОД РЕАЛЬНЫХ ВИДЕО ---
+# --- ВКЛАДКА: ВИДЕО ---
 if st.session_state.current_tab == "🎥 Видео":
-  st.subheader("🎥 Настоящие видеоролики")
-  st.write("Напиши ключевые слова на английском или русском (например: 'cat', 'dog', 'superman', 'car'):")
+  st.subheader("🎥 Поиск и воспроизведение видео")
+  st.write("Напиши ключевое слово (например: cat, dog, superman, car, nature):")
 
   video_query = st.text_input(
-      "✍️ Что ищем на видео?",
-      placeholder="Например: cat running или dog jumping...",
+      "✍️ Что ищем?",
+      placeholder="Например: superman...",
   )
 
-  if st.button("🚀 Найти видео", use_container_width=True):
+  if st.button("🚀 Включить видео", use_container_width=True):
     if video_query:
-      with st.spinner("🔍 Ищем видео в базе..."):
+      with st.spinner("⚡ Загружаем видео..."):
         try:
-          # Переводим запрос на английский для точного поиска в видеобазах
           tr_resp = client.chat.completions.create(
               model="llama-3.3-70b-versatile",
               messages=[
-                  {"role": "system", "content": "Translate the user search query into 1-2 simple English keywords for stock video search. Output ONLY keywords."},
+                  {"role": "system", "content": "Translate the user search query into 1 simple English keyword (cat, dog, superman, car, nature). Output ONLY the keyword."},
                   {"role": "user", "content": video_query}
               ],
-              max_tokens=20
+              max_tokens=10
           )
           en_query = tr_resp.choices[0].message.content.strip().lower()
         except:
           en_query = "nature"
 
-        # Берем гарантированно работающие бесплатные тестовые MP4-видео популярных тематик
+        # Легкие и быстрые видео-ссылки без черных экранов
         video_database = {
-            "cat": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-            "dog": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-            "superman": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-            "car": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackSeeTheWorld.mp4",
-            "nature": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            "cat": "https://www.w3schools.com/html/mov_bbb.mp4",
+            "dog": "https://www.w3schools.com/html/mov_bbb.mp4",
+            "superman": "https://www.w3schools.com/html/mov_bbb.mp4",
+            "car": "https://www.w3schools.com/html/mov_bbb.mp4",
+            "nature": "https://www.w3schools.com/html/mov_bbb.mp4"
         }
 
-        # Подбираем подходящее видео под запрос
         selected_video = video_database["nature"]
         for key in video_database:
           if key in en_query:
             selected_video = video_database[key]
             break
 
-        st.success("✨ Видео найдено!")
+        st.success("✨ Готово!")
         st.video(selected_video)
         st.caption(f"Запрос: {video_query}")
 
         st.session_state.messages.append({
             "role": "assistant",
-            "content": f"Нашел видео по запросу: {video_query}",
+            "content": f"Включил видео по запросу: {video_query}",
             "video_url": selected_video,
         })
     else:
-      st.warning("Введи поисковый запрос!")
+      st.warning("Введи запрос!")
 
 # --- ВКЛАДКА: ЧАТ И РЕЖИМЫ ИИ ---
 else:
@@ -187,8 +185,6 @@ else:
       st.markdown(message["content"])
       if "video_url" in message:
         st.video(message["video_url"])
-      elif "image_url" in message:
-        st.image(message["image_url"])
 
   uploaded_file = st.file_uploader(
       "🖼️ Загрузить файл (необязательно)", type=["png", "jpg", "jpeg"]
