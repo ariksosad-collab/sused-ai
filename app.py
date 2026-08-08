@@ -14,13 +14,11 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# Инициализация настроек темы в сессии
 if "bg_theme" not in st.session_state:
     st.session_state.bg_theme = "Темная"
 if "fx_effect" not in st.session_state:
     st.session_state.fx_effect = "Без эффекта"
 
-# Цветовые схемы фона
 bg_colors = {
     "Темная": "#131314",
     "Светлая": "#f0f2f6",
@@ -37,18 +35,16 @@ text_colors = {
 current_bg = bg_colors.get(st.session_state.bg_theme, "#131314")
 current_txt = text_colors.get(st.session_state.bg_theme, "#e3e3e3")
 
-# HTML/CSS/JS для интерфейса, верхней радужной панели, курсора и погодных эффектов
+# Исправлена f-строка (все CSS скобки удвоены как {{ и }})
 st.markdown(f"""
 <style>
     .stApp {{
         background-color: {current_bg};
         color: {current_txt};
     }}
-    /* Скрываем лишний стандартный мусор, но оставляем стрелку сайдбара */
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
 
-    /* Длинное верхнее поле с радужным шлейфом */
     #rainbow-banner {{
         width: 100%;
         height: 120px;
@@ -72,15 +68,11 @@ st.markdown(f"""
 </style>
 
 <script>
-// Радужный курсор внутри верхнего баннера
-const banner = window.parent.document.getElementById('rainbow-banner') || document.body;
-
-document.addEventListener('mousemove', function(e) {
+document.addEventListener('mousemove', function(e) {{
     let x = e.clientX;
     let y = e.clientY;
     
-    // Проверяем, находится ли курсор в верхней зоне экрана (где баннер)
-    if (y < 220) {
+    if (y < 250) {{
         let dot = document.createElement('div');
         dot.style.position = 'fixed';
         dot.style.left = x + 'px';
@@ -97,17 +89,17 @@ document.addEventListener('mousemove', function(e) {
         
         document.body.appendChild(dot);
         
-        setTimeout(() => {
+        setTimeout(() => {{
             dot.style.transition = 'all 0.5s ease';
             dot.style.transform = 'scale(0.2)';
             dot.style.opacity = '0';
-        }, 30);
+        }}, 30);
         
-        setTimeout(() => {
+        setTimeout(() => {{
             dot.remove();
-        }, 530);
-    }
-});
+        }}, 530);
+    }}
+}});
 </script>
 """, unsafe_allow_html=True)
 
@@ -130,7 +122,7 @@ with st.sidebar:
     else:
         st.info("История пуста.")
 
-# --- ПУЛЬТ НАСТРОЕК В ПРАВОМ УГЛУ НАД ЧАТom ---
+# --- ПУЛЬТ НАСТРОЕК В ПРАВОМ УГЛУ ---
 col_title, col_settings = st.columns([2, 2])
 
 with col_title:
@@ -151,7 +143,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- ВИЗУАЛЬНЫЕ ЭФФЕКТЫ (ДОЖДЬ, МОЛНИИ, ЗВЕЗДЫ) ---
+# --- ВИЗУАЛЬНЫЕ ЭФФЕКТЫ ---
 if st.session_state.fx_effect == "🌧️ Дождь":
     st.markdown("""
     <style>
@@ -212,7 +204,6 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # 1. Генерация картинки (/generate)
     if user_input.startswith("/generate "):
         raw_prompt = user_input.replace("/generate ", "", 1)
         with st.chat_message("assistant"):
@@ -255,7 +246,6 @@ if user_input:
             except Exception as e:
                 st.error(f"Ошибка: {e}")
 
-    # 2. Редактирование фото (/inpainting)
     elif user_input.startswith("/inpainting "):
         if uploaded_file:
             prompt_text = user_input.replace("/inpainting ", "", 1)
@@ -291,7 +281,6 @@ if user_input:
             with st.chat_message("assistant"):
                 st.warning("Сначала загрузи картинку сверху для использования /inpainting!")
 
-    # 3. Обычный чат
     else:
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
