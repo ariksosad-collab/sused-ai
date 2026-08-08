@@ -11,7 +11,7 @@ except:
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# --- ПЛЮШКИ ДИЗАЙНА И КАСКАДНЫЕ СТИЛИ ---
+# --- СТИЛИ С ФИКСИРОВАННЫМ И ВИДИМЫМ САЙДБАРОМ ---
 st.markdown(
     """
 <style>
@@ -20,15 +20,19 @@ st.markdown(
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Сайдбар */
+    /* ЖЕСТКАЯ ФИКСАЦИЯ САЙДБАРА (чтобы никогда не пропадал) */
     [data-testid="stSidebar"] {
         background-color: #070d10 !important;
         border-right: 1px solid rgba(0, 255, 204, 0.1);
         min-width: 280px !important;
         max-width: 280px !important;
+        transform: none !important;
+        visibility: visible !important;
+        display: block !important;
     }
     
-    [data-testid="collapsedControl"], button[kind="header"] {
+    /* Убираем лишние элементы управления шапкой, но оставляем доступность панели */
+    [data-testid="collapsedControl"] {
         display: none !important;
     }
 
@@ -43,12 +47,7 @@ st.markdown(
         background-attachment: fixed;
     }
 
-    /* Карточки и контейнеры */
-    .element-container, .stChatMessage {
-        border-radius: 12px;
-    }
-
-    /* Кастомизация полей ввода */
+    /* Поля ввода */
     .stTextInput input, .stTextArea textarea {
         background-color: #111b24 !important;
         color: #ffffff !important;
@@ -105,7 +104,7 @@ if "messages" not in st.session_state:
 if "current_tab" not in st.session_state:
   st.session_state.current_tab = "💬 Чат с ИИ"
 
-# --- БОКОВАЯ ПАНЕЛЬ ---
+# --- БОКОВАЯ ПАНЕЛЬ (ГАРАНТИРОВАННО ВИДИМАЯ) ---
 with st.sidebar:
   st.markdown("### ✨ Sused Control Hub")
   st.divider()
@@ -139,7 +138,7 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1", api_key=groq_api_key
 )
 
-# --- ВКЛАДКА: СТУДИЯ КОДА И УТИЛИТ (АПГРЕЙД ИИ) ---
+# --- ВКЛАДКА: СТУДИЯ КОДА И УТИЛИТ ---
 if st.session_state.current_tab == "🛠️ Утилиты":
   st.subheader("🛠️ Элитная студия разработки")
   st.write("Генератор чистого кода без заглушек и обрубков (оптимизирован под Minecraft 1.21.4 / Fabric / Python):")
@@ -157,7 +156,6 @@ if st.session_state.current_tab == "🛠️ Утилиты":
       if code_task:
         with st.spinner("💻 ИИ пишет код с полной реализацией..."):
           try:
-            # УЛЬТРА-ПРОМПТ ДЛЯ ИИ (УДАЛЯЕТ ЛЕНЬ И ОБРУБКИ)
             dev_system_prompt = (
                 "Ты — элитный старший разработчик софта и модификаций для Minecraft (Fabric 1.21.4, Yarn маппинги) и эксперт по Python/Java. "
                 "Твоя задача — писать абсолютно чистый, рабочий, законченный код от начала и до конца. "
