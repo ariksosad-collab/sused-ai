@@ -14,10 +14,15 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# Чистый CSS с рабочим фоном дождевых капель и компактными изображениями
+# Стили: фон с дождем, компактные картинки и скрытие лишнего
 st.markdown("""
 <style>
-    /* Основной фон с анимированными каплями дождя */
+    /* Скрываем элементы шапки Streamlit */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Анимированный фон с дождем */
     .stApp {
         background-color: #0d1b1e;
         color: #e3e3e3;
@@ -28,7 +33,6 @@ st.markdown("""
         background-attachment: fixed;
     }
 
-    /* Эффект падающих капель дождя */
     .stApp::before {
         content: "";
         position: fixed;
@@ -73,14 +77,12 @@ st.markdown("""
 </style>
 
 <script>
-// Интерактивный шлейф за курсором в радужной полосе
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
         banner.onmousemove = function(e) {
             let x = e.clientX;
             let y = e.clientY;
-            
             let dot = document.createElement('div');
             dot.style.position = 'fixed';
             dot.style.left = x + 'px';
@@ -90,22 +92,16 @@ const checkBanner = setInterval(() => {
             dot.style.borderRadius = '50%';
             dot.style.pointerEvents = 'none';
             dot.style.zIndex = '999999';
-            
             const colors = ['#ff0055', '#ff7f00', '#ffff00', '#00ff66', '#00ffff', '#0066ff', '#9900ff'];
             dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
             dot.style.boxShadow = '0 0 12px ' + dot.style.backgroundColor;
-            
             document.body.appendChild(dot);
-            
             setTimeout(() => {
                 dot.style.transition = 'all 0.4s ease-out';
                 dot.style.transform = 'scale(0.1) translateY(-20px)';
                 dot.style.opacity = '0';
             }, 20);
-            
-            setTimeout(() => {
-                dot.remove();
-            }, 420);
+            setTimeout(() => { dot.remove(); }, 420);
         };
         clearInterval(checkBanner);
     }
@@ -113,8 +109,17 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
-# --- БОКОВАЯ ПАНЕЛЬ СО СТРЕЛОЧКОЙ И ИСТОРИЕЙ ---
+# --- БОКОВАЯ ПАНЕЛЬ: РЕЖИМЫ И ИСТОРИЯ ---
 with st.sidebar:
+    st.title("⚙️ Настройки")
+    
+    # Выбор режимов
+    ai_mode = st.selectbox(
+        "Выбери режим работы:",
+        ["🎮 Игровой режим", "🧠 Глубокий (думающий)", "🔥 Мемный режим"]
+    )
+    
+    st.divider()
     st.title("💬 Сохраненные чаты")
     if st.button("➕ Новая сессия", use_container_width=True):
         st.session_state.messages = []
@@ -129,10 +134,9 @@ with st.sidebar:
 
 st.title("🤖 Sused AI Pro Max")
 
-# Радужная полоса следования за курсором
+# Радужная полоса
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
 
-# Инициализация OpenAI / Groq клиента
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=groq_api_key
@@ -147,7 +151,7 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-# Удобная загрузка/вставка картинок для дорисовки
+# Загрузчик картинок для дорисовки
 uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
 
 user_input = st.chat_input("Напиши запрос (нарисуй кота, дорисовывай крылья) или задай вопрос...")
@@ -158,7 +162,6 @@ if user_input:
         st.markdown(user_input)
 
     with st.chat_message("assistant"):
-        # Умное определение намерения через ИИ
         try:
             intent_response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -243,11 +246,16 @@ if user_input:
         else:
             message_placeholder = st.empty()
             try:
+                # Настраиваем системный промпт в зависимости от выбранного режима
+                if "Игровой" in ai_mode:
+                    system_prompt = "Ты — Sused AI в игровом режиме. Ты отлично разбираешься в Minecraft, серверах (например, FunTime), читах, кастомных клиентах, Java и игровом софте. Общайся на геймерском вайбе. Твой создатель — Лёва."
+                elif "Глубокий" in ai_mode:
+                    system_prompt = "Ты — Sused AI в режиме глубокого анализа и программирования. Думай максимально подробно, пиши качественный код, разбирай задачи логически и глубоко. Твой создатель — Лёва."
+                else:
+                    system_prompt = "Ты — Sused AI в мемном режиме. Отвечай ультра-угарно, используя современный интернет-сленг, рофлы и мемы, но помогай по делу. Твой создатель — Лёва."
+
                 messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
-                messages_for_llm.insert(0, {
-                    "role": "system", 
-                    "content": "Ты — Sused AI, крутой ассистент. Твой создатель — Лёва."
-                })
+                messages_for_llm.insert(0, {"role": "system", "content": system_prompt})
                 
                 response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
