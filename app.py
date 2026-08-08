@@ -10,9 +10,7 @@ try:
 except:
     groq_api_key = os.environ.get("GROQ_API_KEY")
 
-# URL для генерации картинок по тексту (Stable Image Core)
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
-# URL для инпаинтинга (правки фото)
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖")
@@ -36,41 +34,50 @@ for message in st.session_state.messages:
 
 uploaded_file = st.file_uploader("Загрузить фото для редактирования (необязательно)", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши /generate [текст] для картинки или /inpainting [текст] для фото")
+user_input = st.chat_input("Напиши /generate [описание] для картинки или просто общайся")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # 1. Генерация картинки с нуля по команде /generate
+    # 1. Генерация картинки по тексту (с автопереводом на английский для лучшего качества)
     if user_input.startswith("/generate "):
-        prompt_text = user_input.replace("/generate ", "", 1)
+        raw_prompt = user_input.replace("/generate ", "", 1)
         with st.chat_message("assistant"):
-            st.info(f"🎨 Генерирую картинку: '{prompt_text}'...")
+            st.info(f"🌐 Перевожу и генерирую: '{raw_prompt}'...")
             
+            # Переводим запрос на английский через Groq для идеального качества нейросети
+            try:
+                translation_response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "Translate the following user prompt into a detailed English image generation prompt. Output ONLY the translated prompt text, nothing else."},
+                        {"role": "user", "content": raw_prompt}
+                    ],
+                    max_tokens=200
+                )
+                english_prompt = translation_response.choices[0].message.content.strip()
+            except:
+                english_prompt = raw_prompt # Если перевод не удался, шлем оригинал
+
             headers = {
                 "Authorization": f"Bearer {STABILITY_API_KEY}",
                 "Accept": "image/*"
             }
-            # Используем multipart/form-data для Stability AI v2beta
             files = {
-                "prompt": (None, prompt_text),
+                "prompt": (None, english_prompt),
                 "output_format": (None, "jpeg")
             }
 
             try:
-                response = requests.post(
-                    STABILITY_GENERATE_URL,
-                    headers=headers,
-                    files=files
-                )
+                response = requests.post(STABILITY_GENERATE_URL, headers=headers, files=files)
                 if response.status_code == 200:
                     st.success("Готово!")
-                    st.image(response.content, caption=f"Результат: {prompt_text}")
+                    st.image(response.content, caption=f"Запрос: {raw_prompt}")
                     st.session_state.messages.append({
                         "role": "assistant",
-                        "content": f"Сгенерировал по запросу: {prompt_text}",
+                        "content": f"Сгенерировал по запросу: {raw_prompt}",
                         "image": response.content
                     })
                 else:
@@ -78,7 +85,7 @@ if user_input:
             except Exception as e:
                 st.error(f"Ошибка: {e}")
 
-    # 2. Редактирование фото по команде /inpainting
+    # 2. Редактирование фото (/inpainting)
     elif user_input.startswith("/inpainting "):
         if uploaded_file:
             prompt_text = user_input.replace("/inpainting ", "", 1)
@@ -114,7 +121,7 @@ if user_input:
             with st.chat_message("assistant"):
                 st.warning("Сначала загрузи картинку сверху для использования /inpainting!")
 
-    # 3. Обычное текстовое общение через Groq
+    # 3. Обычный чат
     else:
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
