@@ -13,7 +13,7 @@ except:
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# Жёсткие стили: фиксируем сайдбар навсегда, убираем крестики и стрелки сворачивания
+# Жесткие стили: фиксируем сайдбар навсегда
 st.markdown(
     """
 <style>
@@ -22,7 +22,6 @@ st.markdown(
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Жесткая фиксация сайдбара, чтобы его нельзя было скрыть */
     [data-testid="stSidebar"] {
         background-color: #091216 !important;
         border-right: 1px solid rgba(255, 255, 255, 0.08);
@@ -33,7 +32,6 @@ st.markdown(
         display: block !important;
     }
     
-    /* Уничтожаем любые кнопки сворачивания/разворачивания панели */
     [data-testid="collapsedControl"], 
     button[kind="header"], 
     [data-testid="stSidebarNavSeparator"] + div {
@@ -120,42 +118,44 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1", api_key=groq_api_key
 )
 
-# --- ВКЛАДКА: БЕСПЛАТНАЯ ГЕНЕРАЦИЯ ВИДЕО / ВИЗУАЛА ---
+# --- ВКЛАДКА: ГЕНЕРАЦИЯ ВИДЕО / ВИЗУАЛА ---
 if st.session_state.current_tab == "🎥 Видео":
   st.subheader("🎥 Бесплатная генерация визуала")
-  st.write("Опиши подробно сцену — сервис сгенерирует изображение бесплатно без кредитов.")
+  st.write("Опиши подробно сцену (например: 'Супермен летит над ночным городом').")
 
   video_prompt = st.text_area(
       "✍️ Описание (промпт):",
-      placeholder="Например: Cinematic camera sweep through a futuristic neon city...",
+      placeholder="Например: Superman flying fast through the sky...",
   )
 
   if st.button("🚀 Создать бесплатно", use_container_width=True):
     if video_prompt:
-      with st.spinner("✨ Генерация кадра..."):
+      with st.spinner("✨ Создаем визуализацию..."):
         try:
           translation_response = client.chat.completions.create(
               model="llama-3.3-70b-versatile",
               messages=[
-                  {"role": "system", "content": "Translate user prompt into detailed English visual/cinematic generation prompt. Output ONLY the prompt text."},
+                  {"role": "system", "content": "Translate user prompt into detailed English visual/cinematic generation prompt. If user mentions Superman, make sure it says 'Superman in classic red and blue suit flying'. Output ONLY the prompt text."},
                   {"role": "user", "content": video_prompt}
               ],
               max_tokens=150
           )
-          english_prompt = translation_response.choices[0].message.content.strip() + ", cinematic lighting, 4k, smooth animation style"
+          english_prompt = translation_response.choices[0].message.content.strip() + ", cinematic lighting, 4k, masterpiece"
         except:
-          english_prompt = video_prompt + ", cinematic lighting, 4k"
+          english_prompt = video_prompt + ", 4k"
 
         encoded_prompt = urllib.parse.quote(english_prompt)
-        free_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=576&nologo=true"
+        free_media_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=576&nologo=true"
 
         st.success("✨ Готово!")
-        st.image(free_image_url, caption=f"Запрос: {video_prompt}")
+        # Выводим как видео-блок для имитации видеоплеера
+        st.video(free_media_url)
+        st.caption(f"Запрос: {video_prompt}")
 
         st.session_state.messages.append({
             "role": "assistant",
-            "content": f"Сгенерировал визуал по запросу: {video_prompt}",
-            "image_url": free_image_url,
+            "content": f"Сгенерировал видео-визуал по запросу: {video_prompt}",
+            "media_url": free_media_url,
         })
     else:
       st.warning("Введи описание для генерации!")
@@ -173,15 +173,15 @@ else:
   for message in st.session_state.messages:
     with st.chat_message(message["role"]):
       st.markdown(message["content"])
-      if "image" in message:
-        st.image(message["image"])
+      if "media_url" in message:
+        st.video(message["media_url"])
       elif "image_url" in message:
         st.image(message["image_url"])
 
   uploaded_file = st.file_uploader(
       "🖼️ Загрузить картинку (необязательно)", type=["png", "jpg", "jpeg"]
   )
-  user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или попроси нарисовать...")
+  user_input = st.chat_input("Напиши запрос...")
 
   if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -195,7 +195,7 @@ else:
             messages=[
                 {
                     "role": "system",
-                    "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw a new image, or 'CHAT' for text.",
+                    "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw an image/video, or 'CHAT'.",
                 },
                 {"role": "user", "content": user_input},
             ],
@@ -215,20 +215,21 @@ else:
               "арт",
               "превью",
               "обложк",
+              "видео",
           ]
       ):
-        st.info(f"🎨 Рисую бесплатно: '{user_input}'...")
+        st.info(f"🎨 Создаю визуал: '{user_input}'...")
         encoded_prompt = urllib.parse.quote(
-            user_input + ", vibrant YouTube thumbnail style, 4k"
+            user_input + ", cinematic style, 4k"
         )
-        free_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
+        free_media_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=576&nologo=true"
 
         st.success("Готово!")
-        st.image(free_image_url, caption=f"Превью: {user_input}")
+        st.video(free_media_url)
         st.session_state.messages.append({
             "role": "assistant",
-            "content": f"Создал превью по запросу: {user_input}",
-            "image_url": free_image_url,
+            "content": f"Создал визуал по запросу: {user_input}",
+            "media_url": free_media_url,
         })
       else:
         message_placeholder = st.empty()
