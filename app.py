@@ -15,13 +15,17 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# CSS + Усиленный JS для полного уничтожения кнопки Manage app и добавления стрелочек к чатам
+# CSS + Убийца кнопки Manage app + Поддержка вставки картинок через Ctrl+V
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
+    
+    /* Полное скрытие блока Manage app внизу справа намертво */
+    iframe[title="streamlit_app"] {height: 100vh !important;}
+    div[data-testid="stDecoration"] {display: none;}
     
     /* Анимированный фон с дождем */
     .stApp {
@@ -49,7 +53,7 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Стрелочка при наведении на элементы истории чатов в сайдбаре */
+    /* Стрелочка при наведении на чаты в сайдбаре */
     [data-testid="stSidebar"] .element-container div p {
         transition: all 0.2s ease;
         cursor: pointer;
@@ -65,14 +69,14 @@ st.markdown("""
         content: "➡️ ";
     }
 
-    /* Компактный размер картинок */
+    /* Размер картинок */
     img {
         max-width: 420px !important;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     }
 
-    /* Анимированная радужная полоса */
+    /* Радужная полоса */
     .rainbow-track {
         width: 100%;
         height: 40px;
@@ -94,24 +98,41 @@ st.markdown("""
 </style>
 
 <script>
-// Жесткое удаление кнопки "Manage app" со всеми дочерними элементами в главном DOM и фреймах
+// Жесткое удаление "Manage app" на уровне родительского окна браузера
 const nukeManageApp = setInterval(() => {
     try {
-        const targetDocs = [document, window.parent.document];
-        targetDocs.forEach(doc => {
-            if (!doc) return;
-            const allElements = doc.querySelectorAll('*');
-            allElements.forEach(el => {
-                if (el.innerText && el.innerText.includes('Manage app')) {
-                    el.style.display = 'none';
-                    el.style.opacity = '0';
-                    el.style.pointerEvents = 'none';
-                    el.remove();
-                }
-            });
+        const doc = window.parent.document;
+        const elements = doc.querySelectorAll('*');
+        elements.forEach(el => {
+            if (el.innerText && (el.innerText.includes('Manage app') || el.innerText.includes('Hosted with Streamlit'))) {
+                el.style.display = 'none';
+                el.remove();
+            }
         });
     } catch(e) {}
 }, 50);
+
+// Перехват Ctrl+V для вставки картинок в буфер обмена
+window.addEventListener('paste', e => {
+    items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (index in items) {
+        item = items[index];
+        if (item.kind === 'file') {
+            blob = item.getAsFile();
+            reader = new FileReader();
+            reader.onload = function(event) {
+                // Создаем скрытый инпут для передачи файла в Streamlit
+                const base64data = event.target.result;
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'pasted_image_base64';
+                hiddenInput.value = base64data;
+                document.body.appendChild(hiddenInput);
+            };
+            reader.readAsDataURL(blob);
+        }
+    }
+});
 
 // Шлейф за курсором в радужной полосе
 const checkBanner = setInterval(() => {
@@ -188,11 +209,11 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
+uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (или вставь через Ctrl+V)", type=['png', 'jpg', 'jpeg'])
 
 user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или задай вопрос...")
 
-# Функция для получения инфо из TikTok по ссылке (фича от себя)
+# Функция для TikTok
 def get_tiktok_info(url):
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
@@ -205,7 +226,6 @@ def get_tiktok_info(url):
     return f"Ссылка на TikTok видео: {url}"
 
 if user_input:
-    # Проверка на наличие TikTok ссылки в сообщении
     tiktok_match = re.search(r'(https?://(?:www\.)?(?:tiktok\.com/@[^/]+/video/\d+|vm\.tiktok\.com/\w+|vt\.tiktok\.com/\w+))', user_input)
     processed_input = user_input
     if tiktok_match:
@@ -231,7 +251,7 @@ if user_input:
         except:
             intent = "CHAT"
 
-        if uploaded_file and ("INPAINT" in intent or any(kw in user_input.lower() for kw in ["дорисуй", "измени", "поменяй", "переделай", "фото"])):
+        if uploaded_file and ("INPAINT" in intent or any(kw in user_input.lower() for kw in ["дорисуй", "измени", "поменяй", "переделай", "фото", "картинк"])):
             st.info(f"🎨 Изменяю картинку: '{user_input}'...")
             
             payload = {
@@ -302,15 +322,17 @@ if user_input:
         else:
             message_placeholder = st.empty()
             try:
+                # Четкое разграничение: Лёва — это пользователь (создатель), а если в разговоре упоминается другой человек по имени Лёва, это просто знакомый.
+                base_identity = "Твой создатель, разработчик и босс — Лёва (то есть пользователь, с которым ты общаешься). Если в диалоге упоминается какой-то другой человек по имени Лёва, помни, что это просто знакомый или друг, а твой главный создатель — Лёва."
+                
                 if "Игровой" in ai_mode:
-                    system_prompt = "Ты — Sused AI в игровом режиме. Разбираешься в Minecraft, серверах (FunTime), клиентах, модах и читах. Общайся в геймерском стиле. Твой создатель — Лёва."
+                    system_prompt = f"Ты — Sused AI в игровом режиме. {base_identity} Разбираешься в Minecraft, серверах (FunTime), клиентах, модах и читах. Общайся в геймерском стиле."
                 elif "Глубокий" in ai_mode:
-                    system_prompt = "Ты — Sused AI в режиме глубокого анализа и кодинга. Отвечай максимально подробно, структурированно, пиши качественный код и разбирай всё по полочкам. Твой создатель — Лёва."
+                    system_prompt = f"Ты — Sused AI в режиме глубокого анализа и кодинга. {base_identity} Отвечай максимально подробно, структурированно, пиши качественный код и разбирай всё по полочкам."
                 else:
-                    system_prompt = "Ты — Sused AI в мемном режиме. Отвечай с юмором, используя угарный сленг, мемы и рофлы, но помогай по делу. Твой создатель — Лёва."
+                    system_prompt = f"Ты — Sused AI в мемном режиме. {base_identity} Отвечай с юмором, используя угарный сленг, мемы и рофлы, но помогай по делу."
 
                 messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
-                # Заменяем последнее сообщение на версию с TikTok контентом, если он был
                 if messages_for_llm:
                     messages_for_llm[-1]["content"] = processed_input
                 
