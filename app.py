@@ -14,15 +14,24 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# Стили: фон с дождем, компактные картинки и скрытие лишнего
+# CSS: Полное скрытие Manage app, верхней шапки, сохранение стрелки панели и фона
 st.markdown("""
 <style>
-    /* Скрываем элементы шапки Streamlit */
+    /* Скрываем верхние и нижние сервисные панели Streamlit (включая Manage app) */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
+    .stAppToolbar {display: none !important;}
+    [data-testid="stStatusWidget"] {display: none !important;}
+    div[class*="viewerBadge"] {display: none !important;}
+    div[class*="styles_viewerBadge"] {display: none !important;}
     
-    /* Анимированный фон с дождем */
+    /* Скрытие кнопки Manage app внизу справа */
+    .stApp > footer {display: none !important;}
+    [data-testid="manage-app-button"] {display: none !important;}
+    iframe[title="streamlit_app"] {margin-bottom: 0px !important;}
+    
+    /* Анимированный фон с падающими каплями дождя */
     .stApp {
         background-color: #0d1b1e;
         color: #e3e3e3;
@@ -48,7 +57,7 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Компактный размер картинок */
+    /* Компактный размер для сгенерированных картинок */
     img {
         max-width: 420px !important;
         border-radius: 12px;
@@ -77,6 +86,7 @@ st.markdown("""
 </style>
 
 <script>
+// Интерактивный шлейф за курсором
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
@@ -109,13 +119,13 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
-# --- БОКОВАЯ ПАНЕЛЬ: РЕЖИМЫ И ИСТОРИЯ ---
+# --- БОКОВАЯ ПАНЕЛЬ (ОТКРЫВАЕТСЯ ПО СТРЕЛКЕ) ---
 with st.sidebar:
-    st.title("⚙️ Настройки")
+    st.title("⚙️ Настройки и Режимы")
     
-    # Выбор режимов
+    # Выбор режима
     ai_mode = st.selectbox(
-        "Выбери режим работы:",
+        "Выбери режим ИИ:",
         ["🎮 Игровой режим", "🧠 Глубокий (думающий)", "🔥 Мемный режим"]
     )
     
@@ -151,10 +161,10 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-# Загрузчик картинок для дорисовки
+# Загрузка файла для редактирования/дорисовки
 uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши запрос (нарисуй кота, дорисовывай крылья) или задай вопрос...")
+user_input = st.chat_input("Напиши запрос (например: нарисуй кота, дорисовывай крылья) или задай вопрос...")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -246,13 +256,12 @@ if user_input:
         else:
             message_placeholder = st.empty()
             try:
-                # Настраиваем системный промпт в зависимости от выбранного режима
                 if "Игровой" in ai_mode:
-                    system_prompt = "Ты — Sused AI в игровом режиме. Ты отлично разбираешься в Minecraft, серверах (например, FunTime), читах, кастомных клиентах, Java и игровом софте. Общайся на геймерском вайбе. Твой создатель — Лёва."
+                    system_prompt = "Ты — Sused AI в игровом режиме. Отлично разбираешься в играх, Minecraft, серверах (например, FunTime), клиентах, модах и читах. Общайся в геймерском стиле. Твой создатель — Лёва."
                 elif "Глубокий" in ai_mode:
-                    system_prompt = "Ты — Sused AI в режиме глубокого анализа и программирования. Думай максимально подробно, пиши качественный код, разбирай задачи логически и глубоко. Твой создатель — Лёва."
+                    system_prompt = "Ты — Sused AI в режиме глубокого анализа и кодинга. Отвечай развернуто, структурированно, подробно и давай качественные технические решения. Твой создатель — Лёва."
                 else:
-                    system_prompt = "Ты — Sused AI в мемном режиме. Отвечай ультра-угарно, используя современный интернет-сленг, рофлы и мемы, но помогай по делу. Твой создатель — Лёва."
+                    system_prompt = "Ты — Sused AI в мемном режиме. Отвечай с юмором, используя угарный сленг, мемы и рофлы, но давая понятный ответ. Твой создатель — Лёва."
 
                 messages_for_llm = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
                 messages_for_llm.insert(0, {"role": "system", "content": system_prompt})
