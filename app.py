@@ -13,7 +13,7 @@ except:
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# Стили интерфейса
+# Жёсткие стили: фиксируем сайдбар навсегда, убираем крестики и стрелки сворачивания
 st.markdown(
     """
 <style>
@@ -22,40 +22,23 @@ st.markdown(
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
+    /* Жесткая фиксация сайдбара, чтобы его нельзя было скрыть */
     [data-testid="stSidebar"] {
         background-color: #091216 !important;
         border-right: 1px solid rgba(255, 255, 255, 0.08);
-        min-width: 260px !important;
-        max-width: 260px !important;
+        min-width: 280px !important;
+        max-width: 280px !important;
+        transform: none !important;
+        visibility: visible !important;
+        display: block !important;
     }
     
-    [data-testid="collapsedControl"] {
+    /* Уничтожаем любые кнопки сворачивания/разворачивания панели */
+    [data-testid="collapsedControl"], 
+    button[kind="header"], 
+    [data-testid="stSidebarNavSeparator"] + div {
         display: none !important;
-    }
-
-    .cat-cover {
-        position: fixed;
-        bottom: 5px;
-        right: 10px;
-        z-index: 999999;
-        background: #0d1b1e;
-        padding: 4px 10px;
-        border-radius: 12px;
-        border: 1px solid rgba(0, 255, 200, 0.3);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-    }
-    .cat-cover img {
-        width: 32px !important;
-        height: 32px !important;
-        border-radius: 50%;
-    }
-    .cat-cover span {
-        font-size: 11px;
-        color: #00ffc4;
-        font-family: monospace;
+        pointer-events: none !important;
     }
 
     .stApp {
@@ -103,7 +86,7 @@ if "messages" not in st.session_state:
 if "current_tab" not in st.session_state:
   st.session_state.current_tab = "💬 Чат с ИИ"
 
-# --- БОКОВАЯ ПАНЕЛЬ С КНОПКАМИ НАВИГАЦИИ ---
+# --- НЕСБИВАЕМАЯ БОКОВАЯ ПАНЕЛЬ ---
 with st.sidebar:
   st.markdown("### ✨ Sused Меню")
   st.divider()
@@ -140,18 +123,17 @@ client = OpenAI(
 # --- ВКЛАДКА: БЕСПЛАТНАЯ ГЕНЕРАЦИЯ ВИДЕО / ВИЗУАЛА ---
 if st.session_state.current_tab == "🎥 Видео":
   st.subheader("🎥 Бесплатная генерация визуала")
-  st.write("Опиши подробно сцену — сервис сгенерирует качественное изображение/анимацию бесплатно без кредитов.")
+  st.write("Опиши подробно сцену — сервис сгенерирует изображение бесплатно без кредитов.")
 
   video_prompt = st.text_area(
       "✍️ Описание (промпт):",
       placeholder="Например: Cinematic camera sweep through a futuristic neon city...",
   )
 
-  if st.button("🚀 Создать видео/кадр бесплатно", use_container_width=True):
+  if st.button("🚀 Создать бесплатно", use_container_width=True):
     if video_prompt:
       with st.spinner("✨ Генерация кадра..."):
         try:
-          # Переводим запрос на английский для лучшего качества генерации
           translation_response = client.chat.completions.create(
               model="llama-3.3-70b-versatile",
               messages=[
@@ -165,7 +147,6 @@ if st.session_state.current_tab == "🎥 Видео":
           english_prompt = video_prompt + ", cinematic lighting, 4k"
 
         encoded_prompt = urllib.parse.quote(english_prompt)
-        # Используем бесплатный генератор без ключей
         free_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=576&nologo=true"
 
         st.success("✨ Готово!")
@@ -198,7 +179,7 @@ else:
         st.image(message["image_url"])
 
   uploaded_file = st.file_uploader(
-      "🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=["png", "jpg", "jpeg"]
+      "🖼️ Загрузить картинку (необязательно)", type=["png", "jpg", "jpeg"]
   )
   user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или попроси нарисовать...")
 
