@@ -13,10 +13,9 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
-# Настройка страницы с свернутой по умолчанию боковой панелью
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS + Кот поверх Manage app + Стили для стрелочки и интерфейса
+# CSS + Плавное появление (летающие элементы) + Кот поверх Manage app
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -24,7 +23,7 @@ st.markdown("""
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Надежно закрываем плашку Manage app в правом нижнем углу гифкой кота */
+    /* Закрываем плашку Manage app в правом нижнем углу чистой гифкой кота */
     .cat-cover {
         position: fixed;
         bottom: 5px;
@@ -74,6 +73,22 @@ st.markdown("""
     @keyframes drop-rain {
         0% { background-position: 0px 0px; }
         100% { background-position: -10px 60px; }
+    }
+
+    /* Плавный полет элементов на свои места при открытии сайта */
+    @keyframes slideInFromTop {
+        0% {
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .block-container {
+        animation: slideInFromTop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     /* Стрелочки для истории чатов в сайдбаре */
@@ -168,28 +183,35 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
+# Инициализация состояния сайдбара
+if "sidebar_state" not in st.session_state:
+    st.session_state.sidebar_state = False
+
 # --- БОКОВАЯ ПАНЕЛЬ ДЛЯ ЧАТОВ ---
-with st.sidebar:
-    st.title("💬 Сохраненные чаты")
-    if st.button("➕ Новая сессия", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
-    st.divider()
-    if "messages" in st.session_state and st.session_state.messages:
-        for i, msg in enumerate(st.session_state.messages):
-            if msg["role"] == "user":
-                st.text(f"👤 {i+1}. {msg['content'][:18]}...")
-    else:
-        st.info("История пуста.")
+if st.session_state.sidebar_state:
+    with st.sidebar:
+        st.title("💬 Сохраненные чаты")
+        if st.button("➕ Новая сессия", use_container_width=True):
+            st.session_state.messages = []
+            st.rerun()
+        st.divider()
+        if "messages" in st.session_state and st.session_state.messages:
+            for i, msg in enumerate(st.session_state.messages):
+                if msg["role"] == "user":
+                    st.text(f"👤 {i+1}. {msg['content'][:18]}...")
+        else:
+            st.info("История пуста.")
 
 # Шапка с интерактивной стрелочкой для открытия чатов
-col_title, col_btn = st.columns([5, 1])
+col_title, col_btn = st.columns([6, 1])
 with col_title:
     st.title("🤖 Sused AI Pro Max")
 with col_btn:
     st.markdown("<br>", unsafe_allow_html=True)
-    # Кнопка-стрелочка для вызова сохраненных чатов (в виде подсказки)
-    st.button("💬 ➡️ Чаты", help="Открыть сохраненные чаты", use_container_width=True)
+    arrow_label = "⬅️ Чаты" if st.session_state.sidebar_state else "➡️ Чаты"
+    if st.button(arrow_label, help="Открыть/Закрыть сохраненные чаты", use_container_width=True):
+        st.session_state.sidebar_state = not st.session_state.sidebar_state
+        st.rerun()
 
 # Радужная полоса
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
@@ -291,7 +313,6 @@ if user_input:
         elif "GENERATE" in intent or any(kw in user_input.lower() for kw in ["нарисуй", "сгенерируй", "создай", "картинку", "арт", "фотообои", "превью", "обложк"]):
             st.info(f"🌐 Создаю превью/изображение: '{user_input}'...")
             
-            # Улучшенный промпт генерации с фокусом на превью/обложки
             try:
                 translation_response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
