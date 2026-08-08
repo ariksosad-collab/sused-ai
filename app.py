@@ -19,7 +19,6 @@ if "bg_theme" not in st.session_state:
 if "fx_effect" not in st.session_state:
     st.session_state.fx_effect = "Без эффекта"
 
-# Продвинутые красивые темы
 bg_styles = {
     "Темная": {"bg": "#131314", "card": "#1e1e24", "text": "#e3e3e3", "border": "#333"},
     "Светлая": {"bg": "#f4f6f9", "card": "#ffffff", "text": "#222222", "border": "#d1d5db"},
@@ -29,33 +28,32 @@ bg_styles = {
 
 t = bg_styles.get(st.session_state.bg_theme, bg_styles["Темная"])
 
-# CSS + JS для точного отслеживания курсора внутри баннера и красивых эффектов фона
-st.markdown(f"""
+# Чистая строка без f-prefix, избегаем любых синтаксических ошибок Python
+st.markdown("""
 <style>
-    .stApp {{
-        background-color: {t["bg"]};
-        color: {t["text"]};
-    }}
-    #MainMenu {{visibility: hidden;}}
-    footer {{visibility: hidden;}}
+    .stApp {
+        background-color: """ + t["bg"] + """;
+        color: """ + t["text"] + """;
+    }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
 
-    /* Баннер с радужным шлейфом */
-    .rainbow-container {{
+    .rainbow-container {
         width: 100%;
         height: 130px;
-        background: linear-gradient(135deg, {t["card"]}, #111116);
+        background: linear-gradient(135deg, """ + t["card"] + """, #111116);
         border-radius: 16px;
         position: relative;
         overflow: hidden;
         margin-bottom: 20px;
-        border: 2px solid {t["border"]};
+        border: 2px solid """ + t["border"] + """;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: crosshair;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     }
-    .rainbow-container h2 {{
+    .rainbow-container h2 {
         background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #9900ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -64,18 +62,16 @@ st.markdown(f"""
         z-index: 2;
         pointer-events: none;
         text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }}
+    }
 
-    /* Стили элементов под тему */
-    div[data-baseweb="select"] > div {{
-        background-color: {t["card"]} !important;
-        color: {t["text"]} !important;
-        border-color: {t["border"]} !important;
-    }}
+    div[data-baseweb="select"] > div {
+        background-color: """ + t["card"] + """ !important;
+        color: """ + t["text"] + """ !important;
+        border-color: """ + t["border"] + """ !important;
+    }
 </style>
 
 <script>
-// Точное отслеживание движения мыши строго внутри баннера
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('interactive-banner');
     if (banner) {
