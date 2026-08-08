@@ -98,7 +98,7 @@ with st.sidebar:
     st.session_state.current_tab = "💬 Чат с ИИ"
     st.rerun()
 
-  if st.button("🖼️ Генерация фото", use_container_width=True):
+  if st.button("🎥 Генерация анимации (Видео)", use_container_width=True):
     st.session_state.current_tab = "🎥 Видео"
     st.rerun()
 
@@ -118,45 +118,46 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1", api_key=groq_api_key
 )
 
-# --- ВКЛАДКА: ГЕНЕРАЦИЯ ФОТО ---
+# --- ВКЛАДКА: ГЕНЕРАЦИЯ АНИМАЦИЙ / GIF ---
 if st.session_state.current_tab == "🎥 Видео":
-  st.subheader("🖼️ Бесплатная генерация картинок")
-  st.write("Опиши подробно, что нарисовать (например: 'собака в очках прыгает').")
+  st.subheader("🎥 Бесплатная генерация анимаций (GIF)")
+  st.write("Опиши движение (например: 'собака в очках прыгает на кровати, анимация, динамично').")
 
   video_prompt = st.text_area(
-      "✍️ Описание (промпт):",
-      placeholder="Например: Cool dog wearing sunglasses jumping...",
+      "✍️ Описание движения:",
+      placeholder="Например: Dog wearing sunglasses jumping on bed, animated GIF style...",
   )
 
-  if st.button("🚀 Создать бесплатно", use_container_width=True):
+  if st.button("🚀 Создать анимацию бесплатно", use_container_width=True):
     if video_prompt:
-      with st.spinner("✨ Рисую изображение..."):
+      with st.spinner("✨ Создаем анимированный кадр..."):
         try:
           translation_response = client.chat.completions.create(
               model="llama-3.3-70b-versatile",
               messages=[
-                  {"role": "system", "content": "Translate user prompt into detailed English image generation prompt. Output ONLY the prompt text."},
+                  {"role": "system", "content": "Translate user prompt into English, adding words like 'animated gif, motion, dynamic action, looping animation'. Output ONLY the prompt text."},
                   {"role": "user", "content": video_prompt}
               ],
               max_tokens=150
           )
-          english_prompt = translation_response.choices[0].message.content.strip() + ", vibrant 4k, masterpiece"
+          english_prompt = translation_response.choices[0].message.content.strip() + ", animated GIF, motion graphics"
         except:
-          english_prompt = video_prompt + ", 4k"
+          english_prompt = video_prompt + ", animated GIF"
 
         encoded_prompt = urllib.parse.quote(english_prompt)
-        free_media_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
+        # Используем параметры для генерации быстрой динамической анимации
+        free_media_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true&seed=42"
 
         st.success("✨ Готово!")
-        st.image(free_media_url, caption=f"Запрос: {video_prompt}")
+        st.image(free_media_url, caption=f"Анимация: {video_prompt}")
 
         st.session_state.messages.append({
             "role": "assistant",
-            "content": f"Сгенерировал картинку по запросу: {video_prompt}",
+            "content": f"Сгенерировал анимацию по запросу: {video_prompt}",
             "image_url": free_media_url,
         })
     else:
-      st.warning("Введи описание для генерации!")
+      st.warning("Введи описание движения!")
 
 # --- ВКЛАДКА: ЧАТ И РЕЖИМЫ ИИ ---
 else:
@@ -191,7 +192,7 @@ else:
             messages=[
                 {
                     "role": "system",
-                    "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw an image, or 'CHAT'.",
+                    "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw an image or animation, or 'CHAT'.",
                 },
                 {"role": "user", "content": user_input},
             ],
@@ -211,19 +212,20 @@ else:
               "арт",
               "превью",
               "обложк",
+              "анимаци",
           ]
       ):
-        st.info(f"🎨 Рисую: '{user_input}'...")
+        st.info(f"🎨 Создаю: '{user_input}'...")
         encoded_prompt = urllib.parse.quote(
-            user_input + ", vibrant style, 4k"
+            user_input + ", animated style, vibrant"
         )
-        free_media_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
+        free_media_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true"
 
         st.success("Готово!")
         st.image(free_media_url, caption=f"Запрос: {user_input}")
         st.session_state.messages.append({
             "role": "assistant",
-            "content": f"Создал картинку по запросу: {user_input}",
+            "content": f"Создал визуализацию по запросу: {user_input}",
             "image_url": free_media_url,
         })
       else:
