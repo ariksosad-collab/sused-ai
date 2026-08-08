@@ -35,17 +35,17 @@ text_colors = {
 current_bg = bg_colors.get(st.session_state.bg_theme, "#131314")
 current_txt = text_colors.get(st.session_state.bg_theme, "#e3e3e3")
 
-# Исправлена f-строка (все CSS скобки удвоены как {{ и }})
-st.markdown(f"""
+# Обычная строка без f, чтобы Python не ругался на скобки JS
+st.markdown("""
 <style>
-    .stApp {{
-        background-color: {current_bg};
-        color: {current_txt};
-    }}
-    #MainMenu {{visibility: hidden;}}
-    footer {{visibility: hidden;}}
+    .stApp {
+        background-color: """ + current_bg + """;
+        color: """ + current_txt + """;
+    }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
 
-    #rainbow-banner {{
+    #rainbow-banner {
         width: 100%;
         height: 120px;
         background: linear-gradient(90deg, #1f1f23, #2d2d38, #1f1f23);
@@ -58,21 +58,21 @@ st.markdown(f"""
         align-items: center;
         justify-content: center;
     }
-    #rainbow-banner h2 {{
+    #rainbow-banner h2 {
         background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #9900ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: bold;
         margin: 0;
-    }}
+    }
 </style>
 
 <script>
-document.addEventListener('mousemove', function(e) {{
+document.addEventListener('mousemove', function(e) {
     let x = e.clientX;
     let y = e.clientY;
     
-    if (y < 250) {{
+    if (y < 250) {
         let dot = document.createElement('div');
         dot.style.position = 'fixed';
         dot.style.left = x + 'px';
@@ -89,17 +89,17 @@ document.addEventListener('mousemove', function(e) {{
         
         document.body.appendChild(dot);
         
-        setTimeout(() => {{
+        setTimeout(() => {
             dot.style.transition = 'all 0.5s ease';
             dot.style.transform = 'scale(0.2)';
             dot.style.opacity = '0';
-        }}, 30);
+        }, 30);
         
-        setTimeout(() => {{
+        setTimeout(() => {
             dot.remove();
-        }}, 530);
-    }}
-}});
+        }, 530);
+    }
+});
 </script>
 """, unsafe_allow_html=True)
 
@@ -259,7 +259,7 @@ if user_input:
                 }
                 files = {'image': ('input.jpg', uploaded_file.getvalue(), 'image/jpeg')}
                 headers = {
-                    "Authorization": f"Bearer {STABILITY_API_KEY}",
+                    "Authorization": f"Bearer {STBILITY_API_KEY}" if 'STBILITY_API_KEY' in locals() else f"Bearer {STABILITY_API_KEY}",
                     "Accept": "image/*"
                 }
 
