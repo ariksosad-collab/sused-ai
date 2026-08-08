@@ -15,7 +15,7 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# CSS + Убийца кнопки Manage app + Поддержка вставки картинок через Ctrl+V
+# CSS + Блокировка Manage app котом + Поддержка Ctrl+V картинки в поле чата
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -23,10 +23,32 @@ st.markdown("""
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Полное скрытие блока Manage app внизу справа намертво */
-    iframe[title="streamlit_app"] {height: 100vh !important;}
-    div[data-testid="stDecoration"] {display: none;}
-    
+    /* Закрываем плашку Manage app в правом нижнем углу плавающим блоком с котом-гифкой */
+    .cat-cover {
+        position: fixed;
+        bottom: 5px;
+        right: 10px;
+        z-index: 999999;
+        background: #0d1b1e;
+        padding: 4px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 255, 200, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    }
+    .cat-cover img {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 50%;
+    }
+    .cat-cover span {
+        font-size: 11px;
+        color: #00ffc4;
+        font-family: monospace;
+    }
+
     /* Анимированный фон с дождем */
     .stApp {
         background-color: #0d1b1e;
@@ -53,7 +75,7 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Стрелочка при наведении на чаты в сайдбаре */
+    /* Стрелочки для истории чатов в сайдбаре */
     [data-testid="stSidebar"] .element-container div p {
         transition: all 0.2s ease;
         cursor: pointer;
@@ -69,8 +91,8 @@ st.markdown("""
         content: "➡️ ";
     }
 
-    /* Размер картинок */
-    img {
+    /* Размер картинок в чате */
+    img.chat-img {
         max-width: 420px !important;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.6);
@@ -98,36 +120,31 @@ st.markdown("""
 </style>
 
 <script>
-// Жесткое удаление "Manage app" на уровне родительского окна браузера
-const nukeManageApp = setInterval(() => {
+// Внедряем гифку кота поверх Manage app
+const addCatCover = setInterval(() => {
     try {
         const doc = window.parent.document;
-        const elements = doc.querySelectorAll('*');
-        elements.forEach(el => {
-            if (el.innerText && (el.innerText.includes('Manage app') || el.innerText.includes('Hosted with Streamlit'))) {
-                el.style.display = 'none';
-                el.remove();
-            }
-        });
+        if (!doc.getElementById('custom-cat-cover')) {
+            const cover = doc.createElement('div');
+            cover.id = 'custom-cat-cover';
+            cover.className = 'cat-cover';
+            cover.innerHTML = '<img src="https://media.giphy.com/media/JQXaVaXLadghi/giphy.gif"><span>Sused Protected 🐾</span>';
+            doc.body.appendChild(cover);
+        }
     } catch(e) {}
-}, 50);
+}, 100);
 
-// Перехват Ctrl+V для вставки картинок в буфер обмена
+// Перехват Ctrl+V для вставки картинок в чат
 window.addEventListener('paste', e => {
-    items = (e.clipboardData || e.originalEvent.clipboardData).items;
-    for (index in items) {
-        item = items[index];
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (let index in items) {
+        let item = items[index];
         if (item.kind === 'file') {
-            blob = item.getAsFile();
-            reader = new FileReader();
+            let blob = item.getAsFile();
+            let reader = new FileReader();
             reader.onload = function(event) {
-                // Создаем скрытый инпут для передачи файла в Streamlit
                 const base64data = event.target.result;
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'pasted_image_base64';
-                hiddenInput.value = base64data;
-                document.body.appendChild(hiddenInput);
+                window.parent.postMessage({type: 'streamlit:set_pasted_image', data: base64data}, '*');
             };
             reader.readAsDataURL(blob);
         }
@@ -181,7 +198,7 @@ with st.sidebar:
     else:
         st.info("История пуста.")
 
-st.title("🤖 Sused AI Pro Max")
+st.title("🤖 Sused AI Pro Max ➡️")
 
 # Радужная полоса
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
@@ -209,9 +226,10 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (или вставь через Ctrl+V)", type=['png', 'jpg', 'jpeg'])
+# Загрузчик файлов + подсказка про Ctrl+V
+uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (можно вставить через Ctrl+V прямо в чат)", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или задай вопрос...")
+user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или вставь картинку через Ctrl+V...")
 
 # Функция для TikTok
 def get_tiktok_info(url):
@@ -322,7 +340,6 @@ if user_input:
         else:
             message_placeholder = st.empty()
             try:
-                # Четкое разграничение: Лёва — это пользователь (создатель), а если в разговоре упоминается другой человек по имени Лёва, это просто знакомый.
                 base_identity = "Твой создатель, разработчик и босс — Лёва (то есть пользователь, с которым ты общаешься). Если в диалоге упоминается какой-то другой человек по имени Лёва, помни, что это просто знакомый или друг, а твой главный создатель — Лёва."
                 
                 if "Игровой" in ai_mode:
