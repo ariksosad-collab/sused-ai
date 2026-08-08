@@ -10,93 +10,120 @@ except:
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# --- УЛЬТРА-ДИЗАЙН И КИБЕРПАНК СТИЛИ ---
+# Инициализация темы в состоянии
+if "theme_mode" not in st.session_state:
+  st.session_state.theme_mode = "⚡ Киберпанк Неон"
+
+# Динамические палитры в зависимости от выбранной темы
+if st.session_state.theme_mode == "⚡ Киберпанк Неон":
+  bg_color = "#070e14"
+  sidebar_bg = "#050b0f"
+  accent_color = "#00ffcc"
+  accent_gradient = "linear-gradient(90deg, #00ffcc, #0066ff, #9900ff, #ff0055, #00ffcc)"
+  card_bg = "#0d1620"
+  border_glow = "rgba(0, 255, 204, 0.25)"
+elif st.session_state.theme_mode == "🌌 Глубокий Космос":
+  bg_color = "#0c0914"
+  sidebar_bg = "#07050a"
+  accent_color = "#a855f7"
+  accent_gradient = "linear-gradient(90deg, #a855f7, #ec4899, #3b82f6, #a855f7)"
+  card_bg = "#151022"
+  border_glow = "rgba(168, 85, 247, 0.25)"
+else: # Хакерский Зеленый
+  bg_color = "#050f08"
+  sidebar_bg = "#030805"
+  accent_color = "#22c55e"
+  accent_gradient = "linear-gradient(90deg, #22c55e, #10b981, #059669, #22c55e)"
+  card_bg = "#0a1a0f"
+  border_glow = "rgba(34, 197, 94, 0.25)"
+
+# --- ДИЗАЙН И СТИЛИ С ВЫБОРОМ ТЕМЫ ---
 st.markdown(
-    """
+    f"""
 <style>
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stAppToolbar {display: none !important;}
+    #MainMenu {{visibility: hidden;}}
+    header {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    .stAppToolbar {{display: none !important;}}
     
     /* Жесткая фиксация сайдбара */
-    [data-testid="stSidebar"] {
-        background-color: #050b0f !important;
-        border-right: 1px solid rgba(0, 255, 204, 0.15);
+    [data-testid="stSidebar"] {{
+        background-color: {sidebar_bg} !important;
+        border-right: 1px solid {border_glow};
         min-width: 280px !important;
         max-width: 280px !important;
-    }
-    [data-testid="collapsedControl"] {
+    }}
+    [data-testid="collapsedControl"] {{
         display: none !important;
-    }
+    }}
 
     /* Общий фон */
-    .stApp {
-        background-color: #070e14;
-        color: #e2e8f0;
+    .stApp {{
+        background-color: {bg_color};
+        color: #f1f5f9;
         background-image: 
-            radial-gradient(circle at 10% 10%, rgba(0, 255, 170, 0.06) 0%, transparent 40%),
-            radial-gradient(circle at 90% 90%, rgba(0, 102, 255, 0.06) 0%, transparent 40%),
-            linear-gradient(180deg, #070e14 0%, #030609 100%);
+            radial-gradient(circle at 10% 10%, {accent_color}10 0%, transparent 40%),
+            radial-gradient(circle at 90% 90%, #3b82f610 0%, transparent 40%),
+            linear-gradient(180deg, {bg_color} 0%, #020406 100%);
         background-attachment: fixed;
-    }
+    }}
 
-    /* Кастомизация полей ввода */
-    .stTextInput input, .stTextArea textarea {
-        background-color: #0d1620 !important;
+    /* Поля ввода */
+    .stTextInput input, .stTextArea textarea {{
+        background-color: {card_bg} !important;
         color: #ffffff !important;
-        border: 1px solid rgba(0, 255, 204, 0.25) !important;
-        border-radius: 10px !important;
-    }
-    .stTextInput input:focus, .stTextArea textarea:focus {
-        border-color: #00ffcc !important;
-        box-shadow: 0 0 12px rgba(0, 255, 204, 0.3);
-    }
+        border: 1px solid {border_glow} !important;
+        border-radius: 12px !important;
+    }}
+    .stTextInput input:focus, .stTextArea textarea:focus {{
+        border-color: {accent_color} !important;
+        box-shadow: 0 0 15px {accent_color}40;
+    }}
 
-    /* Радужная линия */
-    .rainbow-track {
+    /* Радужная / тематическая линия */
+    .rainbow-track {{
         width: 100%;
         height: 4px;
-        background: linear-gradient(90deg, #00ffcc, #0066ff, #9900ff, #ff0055, #00ffcc);
+        background: {accent_gradient};
         background-size: 400% 400%;
         animation: rainbow-flow 6s linear infinite;
         border-radius: 4px;
         margin-bottom: 25px;
-        box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
-    }
+        box-shadow: 0 0 20px {accent_color}60;
+    }}
 
-    @keyframes rainbow-flow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+    @keyframes rainbow-flow {{
+        0% {{ background-position: 0% 50%; }}
+        50% {{ background-position: 100% 50%; }}
+        100% {{ background-position: 0% 50%; }}
+    }}
 
     /* Кнопки */
-    .stButton button {
-        background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+    .stButton button {{
+        background: {accent_gradient};
+        background-size: 200% auto;
         color: white;
         border: none;
-        border-radius: 8px;
-        font-weight: 600;
+        border-radius: 10px;
+        font-weight: 700;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
-    }
-    .stButton button:hover {
+        box-shadow: 0 4px 15px {accent_color}30;
+    }}
+    .stButton button:hover {{
         transform: translateY(-2px);
-        box-shadow: 0 6px 18px rgba(0, 255, 204, 0.4);
-        background: linear-gradient(135deg, #00ffcc 0%, #00b4d8 100%);
-        color: #03070a;
-    }
+        box-shadow: 0 6px 22px {accent_color}60;
+        filter: brightness(1.15);
+    }}
 
-    /* Кастомные контейнеры чата */
-    [data-testid="stChatMessage"] {
-        background-color: #0d1620 !important;
-        border: 1px solid rgba(0, 255, 204, 0.1) !important;
-        border-radius: 14px !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        padding: 15px;
-        margin-bottom: 12px;
-    }
+    /* Контейнеры чата */
+    [data-testid="stChatMessage"] {{
+        background-color: {card_bg} !important;
+        border: 1px solid {border_glow} !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        padding: 18px;
+        margin-bottom: 15px;
+    }}
 </style>
 """,
     unsafe_allow_html=True,
@@ -108,9 +135,22 @@ if "messages" not in st.session_state:
 if "current_tab" not in st.session_state:
   st.session_state.current_tab = "💬 Чат с ИИ"
 
-# --- БОКОВАЯ ПАНЕЛЬ ---
+# --- БОКОВАЯ ПАНЕЛЬ С ВЫБОРОМ ТЕМЫ ---
 with st.sidebar:
   st.markdown("### ✨ Sused Control Hub")
+  st.divider()
+
+  # ВЫБОР ТЕМЫ ОФОРМЛЕНИЯ
+  st.markdown("🎨 **Выбор темы интерфейса:**")
+  selected_theme = st.selectbox(
+      "Тема оформления:",
+      ["⚡ Киберпанк Неон", "🌌 Глубокий Космос", "🟢 Хакерский Зеленый"],
+      label_visibility="collapsed"
+  )
+  if selected_theme != st.session_state.theme_mode:
+    st.session_state.theme_mode = selected_theme
+    st.rerun()
+
   st.divider()
 
   if st.button("✏️ Новый чат", use_container_width=True):
@@ -127,7 +167,7 @@ with st.sidebar:
     st.rerun()
 
   st.divider()
-  st.markdown("**История запросов:**")
+  st.markdown("**📜 История запросов:**")
   if st.session_state.messages:
     for msg in st.session_state.messages:
       if msg["role"] == "user":
@@ -153,7 +193,6 @@ if st.session_state.current_tab == "🛠️ Утилиты":
   )
 
   if tool_type == "📝 Генератор кода (Java / Python / Mods)":
-    # Выбор режима кодинга
     code_mode = st.radio(
         "🧠 Режим генерации кода:",
         [
@@ -168,7 +207,7 @@ if st.session_state.current_tab == "🛠️ Утилиты":
 
     if st.button("🚀 Запустить генерацию кода", use_container_width=True):
       if code_task:
-        with st.spinner("💻 ИИ пишет код..."):
+        with st.spinner("💻 ИИ пишет мощный код..."):
           try:
             if "Умный режим" in code_mode:
               dev_system_prompt = (
