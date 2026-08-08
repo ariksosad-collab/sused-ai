@@ -13,9 +13,81 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
-st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖")
-st.markdown("<style>.stApp {background-color: #131314; color: #e3e3e3;}</style>", unsafe_allow_html=True)
+st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
+# Кастомный дизайн: темная тема, радужный курсор и стилизация сайдбара
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #131314;
+        color: #e3e3e3;
+    }
+    /* Эффект радужного следа за курсором в шапке */
+    body {
+        cursor: default;
+    }
+    /* Стилизация сайдбара (истории чатов) */
+    [data-testid="stSidebar"] {
+        background-color: #1a1a1c;
+        border-left: 1px solid #333;
+    }
+</style>
+
+<script>
+// Добавляем эффект радужного хвоста за курсором
+document.addEventListener('mousemove', function(e) {
+    let cursorTrail = document.createElement('div');
+    cursorTrail.className = 'trail';
+    cursorTrail.style.position = 'fixed';
+    cursorTrail.style.left = e.pageX + 'px';
+    cursorTrail.style.top = e.pageY + 'px';
+    cursorTrail.style.width = '10px';
+    cursorTrail.style.height = '10px';
+    cursorTrail.style.borderRadius = '50%';
+    cursorTrail.style.pointerEvents = 'none';
+    cursorTrail.style.zIndex = '999999';
+    
+    // Рандомный радужный цвет
+    const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'];
+    cursorTrail.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    cursorTrail.style.boxShadow = '0 0 10px ' + cursorTrail.style.backgroundColor;
+    
+    document.body.appendChild(cursorTrail);
+    
+    setTimeout(() => {
+        cursorTrail.style.transition = 'all 0.5s ease';
+        cursorTrail.style.transform = 'scale(0)';
+        cursorTrail.style.opacity = '0';
+    }, 50);
+    
+    setTimeout(() => {
+        cursorTrail.remove();
+    }, 550);
+});
+</script>
+""", unsafe_allow_html=True)
+
+# --- ПРАВАЯ ВЫДВИГАЮЩАЯСЯ ПАНЕЛЬ (СОХРАНЕННЫЕ ЧАТЫ) ---
+with st.sidebar:
+    st.title("💬 Сохраненные чаты")
+    st.markdown("Здесь хранятся твои сессии и история.")
+    
+    if st.button("➕ Новая сессия / Очистить чат", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+        
+    st.divider()
+    
+    # Список сохраненных чатов (история текущей сессии по пунктам)
+    if "messages" in st.session_state and st.session_state.messages:
+        st.subheader("История текущего чата:")
+        for i, msg in enumerate(st.session_state.messages):
+            if msg["role"] == "user":
+                st.text(f"👤 {i+1}. {msg['content'][:25]}...")
+    else:
+        st.info("Пока нет активных диалогов.")
+
+# --- ОСНОВНОЙ ЭКРАН ---
 st.title("🤖 Sused AI Pro Max")
 
 client = OpenAI(
@@ -41,13 +113,12 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # 1. Генерация картинки по тексту (с автопереводом на английский для лучшего качества)
+    # 1. Генерация картинки по тексту (с автопереводом)
     if user_input.startswith("/generate "):
         raw_prompt = user_input.replace("/generate ", "", 1)
         with st.chat_message("assistant"):
             st.info(f"🌐 Перевожу и генерирую: '{raw_prompt}'...")
             
-            # Переводим запрос на английский через Groq для идеального качества нейросети
             try:
                 translation_response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
@@ -59,7 +130,7 @@ if user_input:
                 )
                 english_prompt = translation_response.choices[0].message.content.strip()
             except:
-                english_prompt = raw_prompt # Если перевод не удался, шлем оригинал
+                english_prompt = raw_prompt
 
             headers = {
                 "Authorization": f"Bearer {STABILITY_API_KEY}",
@@ -105,7 +176,7 @@ if user_input:
 
                 try:
                     response = requests.post(STABILITY_INPAINT_URL, headers=headers, files=files, data=payload)
-                    if response.status_code == 200:
+                    if response.status_code200:
                         st.success("Готово!")
                         st.image(response.content, caption=f"Результат: {prompt_text}")
                         st.session_state.messages.append({
