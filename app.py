@@ -13,16 +13,15 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
-st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# Стили и тот самый надежный JS для анимации меню
+# Стилизация под Gemini
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
-    [data-testid="stSidebar"] {display: none !important;}
     
     /* Плашка с котом */
     .cat-cover {
@@ -76,44 +75,10 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Выдвижное меню Gemini */
-    .gemini-sidebar {
-        position: fixed;
-        top: 0;
-        left: -280px;
-        width: 270px;
-        height: 100%;
-        background-color: #091216;
+    /* Сайдбар */
+    [data-testid="stSidebar"] {
+        background-color: #091216 !important;
         border-right: 1px solid rgba(255, 255, 255, 0.08);
-        z-index: 999998;
-        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 5px 0 25px rgba(0,0,0,0.5);
-    }
-    .gemini-sidebar.open {
-        left: 0;
-    }
-    .sidebar-btn {
-        background: transparent;
-        border: none;
-        color: #b0c4de;
-        text-align: left;
-        padding: 10px 14px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        margin-bottom: 5px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        transition: background 0.2s, color 0.2s;
-    }
-    .sidebar-btn:hover {
-        background-color: rgba(0, 255, 200, 0.1);
-        color: #00ffc4;
     }
 
     /* Размер медиа */
@@ -145,7 +110,6 @@ st.markdown("""
 </style>
 
 <script>
-// Автодобавление плашки с котиком в DOM
 const addCatCover = setInterval(() => {
     try {
         const doc = window.parent.document;
@@ -159,7 +123,6 @@ const addCatCover = setInterval(() => {
     } catch(e) {}
 }, 100);
 
-// Интерактивный шлейф для радужной полосы
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
@@ -198,61 +161,41 @@ if "messages" not in st.session_state:
 if "current_tab" not in st.session_state:
     st.session_state.current_tab = "💬 Чат"
 
-# Обработка навигации через query_params
-params = st.query_params
-if "nav" in params:
-    nav_val = params["nav"]
-    if nav_val == "new_chat":
+# --- БОКОВОЕ МЕНЮ GEMINI ---
+with st.sidebar:
+    st.markdown("### ✨ Gemini Меню")
+    st.divider()
+    
+    if st.button("✏️ Новый чат", use_container_width=True):
         st.session_state.messages = []
         st.session_state.current_tab = "💬 Чат"
-        st.query_params.clear()
         st.rerun()
-    elif nav_val == "video":
+        
+    if st.button("🎥 Видео", use_container_width=True):
         st.session_state.current_tab = "🎥 Видео"
-        st.query_params.clear()
         st.rerun()
-    elif nav_val == "chat":
+
+    if st.button("💬 Чат с ИИ", use_container_width=True):
         st.session_state.current_tab = "💬 Чат"
-        st.query_params.clear()
         st.rerun()
 
-# Рендеринг HTML кастомного меню
-history_html = ""
-if st.session_state.messages:
-    for msg in st.session_state.messages:
-        if msg["role"] == "user":
-            history_html += f"<div style='font-size: 12px; color: #8ab4f8; padding: 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'>• {msg['content']}</div>"
-else:
-    history_html = "<div style='font-size: 11px; color: #666;'>История пока пуста</div>"
-
-st.markdown(f"""
-<div id="gemini-nav" class="gemini-sidebar">
-    <div style="font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-        ✨ Gemini Меню
-    </div>
-    <button class="sidebar-btn" onclick="window.location.href='?nav=new_chat'">✏️ Новый чат</button>
-    <button class="sidebar-btn" onclick="window.location.href='?nav=video'">🎥 Видео</button>
-    <button class="sidebar-btn" onclick="window.location.href='?nav=chat'">💬 Чат с ИИ</button>
-    <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
-    <div style="font-size: 12px; color: #888; margin-bottom: 8px;">Недавние чаты:</div>
-    <div style="overflow-y: auto; max-height: 300px;">
-        {history_html}
-    </div>
-</div>
-""", unsafe_allow_html=True)
+    st.divider()
+    st.markdown("**Недавние чаты:**")
+    if st.session_state.messages:
+        for msg in st.session_state.messages:
+            if msg["role"] == "user":
+                st.text(f"• {msg['content'][:25]}...")
+    else:
+        st.caption("История пока пуста")
 
 # Верхняя панель со стрелочкой и заголовком
 col_btn, col_title = st.columns([0.08, 0.92])
 
 with col_btn:
     st.markdown("<br>", unsafe_allow_html=True)
-    # Прямой JavaScript вызов класса .open на элемент меню
-    st.markdown("""
-        <button onclick="
-            const sb = window.parent.document.getElementById('gemini-nav');
-            if(sb) sb.classList.toggle('open');
-        " style="background: #112226; border: 1px solid rgba(0,255,200,0.3); color: #00ffc4; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s;" title="Открыть меню">🡠</button>
-    """, unsafe_allow_html=True)
+    # Рабочая кнопка-стрелочка
+    if st.button("🡠", help="Меню"):
+        st.rerun()
 
 with col_title:
     st.title("🤖 Sused AI Pro Max")
