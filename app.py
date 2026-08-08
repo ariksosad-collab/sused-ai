@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 from openai import OpenAI
-import requests
 import urllib.parse
 
 # Настройка ключа Groq для чата
@@ -48,7 +47,7 @@ st.markdown(
         background-attachment: fixed;
     }
 
-    video, img {
+    img {
         max-width: 480px !important;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.6);
@@ -97,8 +96,8 @@ with st.sidebar:
     st.session_state.current_tab = "💬 Чат с ИИ"
     st.rerun()
 
-  if st.button("🎥 Генератор видео (ИИ)", use_container_width=True):
-    st.session_state.current_tab = "🎥 Видео"
+  if st.button("🛠️ Студия кода и утилит", use_container_width=True):
+    st.session_state.current_tab = "🛠️ Утилиты"
     st.rerun()
 
   st.divider()
@@ -111,57 +110,64 @@ with st.sidebar:
     st.caption("Пока пусто")
 
 st.title("🤖 Sused AI Pro Max")
-st.markdown('<div class="rainbow-track"></div>', unsafe_allow_html=True)
+st.markdown('<div class="rainbow-track">*/</div>', unsafe_allow_html=True)
 
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1", api_key=groq_api_key
 )
 
-# --- ВКЛАДКА: ГЕНЕРАЦИЯ ВИДЕО ЧЕРЕЗ ИИ ---
-if st.session_state.current_tab == "🎥 Видео":
-  st.subheader("🎥 Нейросеть для генерации видео")
-  st.write("Опиши, что должно происходить на видео (например: *superman flying in the sky, cinematic*):")
+# --- ВКЛАДКА: СТУДИЯ КОДА И УТИЛИТ ВМЕСТО ВИДЕО ---
+if st.session_state.current_tab == "🛠️ Утилиты":
+  st.subheader("🛠️ Студия разработчика и шаблонов")
+  st.write("Генератор кода (Python, Java) и шаблонов для автоматизации:")
 
-  vid_prompt = st.text_area(
-      "✍️ Промпт для генерации видео:",
-      placeholder="Например: Dog jumping on bed, dynamic motion...",
+  tool_type = st.selectbox(
+      "📌 Выбери инструмент:",
+      ["📝 Генератор кода (Python / Java)", "🛒 Шаблоны ответов для FunPay"]
   )
 
-  if st.button("🚀 Сгенерировать видео", use_container_width=True):
-    if vid_prompt:
-      with st.spinner("⏳ Нейросеть генерирует видео (это может занять полминуты)..."):
-        try:
-          # Переводим запрос на английский язык для лучшего результата видеомоделей
-          tr_resp = client.chat.completions.create(
-              model="llama-3.3-70b-versatile",
-              messages=[
-                  {"role": "system", "content": "Translate user prompt into detailed English for video generation. Output ONLY the translated prompt."},
-                  {"role": "user", "content": vid_prompt}
-              ],
-              max_tokens=100
-          )
-          en_vid_prompt = tr_resp.choices[0].message.content.strip()
-        except:
-          en_vid_prompt = vid_prompt
+  if tool_type == "📝 Генератор кода (Python / Java)":
+    code_task = st.text_area("✍️ Опиши, какой скрипт или функцию нужно написать:", placeholder="Например: клиент-сервер на python или мод для майнкрафта...")
+    lang = st.radio("Язык:", ["Python", "Java"], horizontal=True)
 
-        # Используем публичный генератор видео-анимаций через Pollinations (поддерживает движок видео/гиф)
-        encoded_vid = urllib.parse.quote(en_vid_prompt + ", video generation, motion, 4k")
-        # Эндпоинт генерации видеоряда
-        ai_video_url = f"https://image.pollinations.ai/prompt/{encoded_vid}?width=512&height=512&nologo=true&model=flux"
+    if st.button("🚀 Написать код", use_container_width=True):
+      if code_task:
+        with st.spinner("💻 Пишу код..."):
+          try:
+            resp = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": f"You are an expert {lang} developer. Write clean, working code with comments based on the user request. Output ONLY the code inside markdown code blocks."},
+                    {"role": "user", "content": code_task}
+                ],
+                max_tokens=2048
+            )
+            generated_code = resp.choices[0].message.content
+            st.markdown(generated_code)
+          except Exception as e:
+            st.error(f"Ошибка: {e}")
+      else:
+        st.warning("Введи задачу для кода!")
 
-        st.success("✨ Видео сгенерировано!")
-        
-        # Выводим как видеоэлемент с повтором
-        st.video(ai_video_url, format="video/mp4", start_time=0)
-        st.caption(f"Промпт: {vid_prompt}")
-
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": f"Сгенерировал видео по запросу: {vid_prompt}",
-            "video_url": ai_video_url,
-        })
-    else:
-      st.warning("Введи описание для генерации!")
+  else:
+    fp_task = st.text_area("✍️ Ситуация для авто-ответа на FunPay:", placeholder="Например: приветствие покупателя после покупки товара или выдача данных...")
+    if st.button("🚀 Сгенерировать шаблон", use_container_width=True):
+      if fp_task:
+        with st.spinner("✍️ Создаю шаблон..."):
+          try:
+            resp = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": "You are a professional online marketplace vendor helper. Write polite, clear, and ready-to-use template messages for buyers."},
+                    {"role": "user", "content": fp_task}
+                ],
+                max_tokens=500
+            )
+            st.info(resp.choices[0].message.content)
+          except Exception as e:
+            st.error(f"Ошибка: {e}")
+      else:
+        st.warning("Введи описание ситуации!")
 
 # --- ВКЛАДКА: ЧАТ И РЕЖИМЫ ИИ ---
 else:
@@ -176,12 +182,7 @@ else:
   for message in st.session_state.messages:
     with st.chat_message(message["role"]):
       st.markdown(message["content"])
-      if "video_url" in message:
-        st.video(message["video_url"])
 
-  uploaded_file = st.file_uploader(
-      "🖼️ Загрузить файл (необязательно)", type=["png", "jpg", "jpeg"]
-  )
   user_input = st.chat_input("Напиши запрос...")
 
   if user_input:
