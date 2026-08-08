@@ -13,9 +13,10 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
-st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
+# Настройка страницы с свернутой по умолчанию боковой панелью
+st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS + Блокировка Manage app котом + Поддержка Ctrl+V картинки в поле чата
+# CSS + Кот поверх Manage app + Стили для стрелочки и интерфейса
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -23,7 +24,7 @@ st.markdown("""
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Закрываем плашку Manage app в правом нижнем углу плавающим блоком с котом-гифкой */
+    /* Надежно закрываем плашку Manage app в правом нижнем углу гифкой кота */
     .cat-cover {
         position: fixed;
         bottom: 5px;
@@ -92,8 +93,8 @@ st.markdown("""
     }
 
     /* Размер картинок в чате */
-    img.chat-img {
-        max-width: 420px !important;
+    img {
+        max-width: 450px !important;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     }
@@ -133,23 +134,6 @@ const addCatCover = setInterval(() => {
         }
     } catch(e) {}
 }, 100);
-
-// Перехват Ctrl+V для вставки картинок в чат
-window.addEventListener('paste', e => {
-    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-    for (let index in items) {
-        let item = items[index];
-        if (item.kind === 'file') {
-            let blob = item.getAsFile();
-            let reader = new FileReader();
-            reader.onload = function(event) {
-                const base64data = event.target.result;
-                window.parent.postMessage({type: 'streamlit:set_pasted_image', data: base64data}, '*');
-            };
-            reader.readAsDataURL(blob);
-        }
-    }
-});
 
 // Шлейф за курсором в радужной полосе
 const checkBanner = setInterval(() => {
@@ -198,7 +182,14 @@ with st.sidebar:
     else:
         st.info("История пуста.")
 
-st.title("🤖 Sused AI Pro Max ➡️")
+# Шапка с интерактивной стрелочкой для открытия чатов
+col_title, col_btn = st.columns([5, 1])
+with col_title:
+    st.title("🤖 Sused AI Pro Max")
+with col_btn:
+    st.markdown("<br>", unsafe_allow_html=True)
+    # Кнопка-стрелочка для вызова сохраненных чатов (в виде подсказки)
+    st.button("💬 ➡️ Чаты", help="Открыть сохраненные чаты", use_container_width=True)
 
 # Радужная полоса
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
@@ -226,10 +217,9 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-# Загрузчик файлов + подсказка про Ctrl+V
-uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (можно вставить через Ctrl+V прямо в чат)", type=['png', 'jpg', 'jpeg'])
+uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или вставь картинку через Ctrl+V...")
+user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или попроси сделать превью...")
 
 # Функция для TikTok
 def get_tiktok_info(url):
@@ -260,7 +250,7 @@ if user_input:
             intent_response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
-                    {"role": "system", "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw a new image, 'INPAINT' if they want to edit/modify/repaint an existing uploaded image, or 'CHAT' for normal text conversation."},
+                    {"role": "system", "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw a new image or thumbnail/preview, 'INPAINT' if they want to edit/modify/repaint an existing uploaded image, or 'CHAT' for normal text conversation."},
                     {"role": "user", "content": user_input}
                 ],
                 max_tokens=10
@@ -298,21 +288,22 @@ if user_input:
             except Exception as e:
                 st.error(f"Ошибка: {e}")
 
-        elif "GENERATE" in intent or any(kw in user_input.lower() for kw in ["нарисуй", "сгенерируй", "создай", "картинку", "арт", "фотообои"]):
-            st.info(f"🌐 Генерирую изображение: '{user_input}'...")
+        elif "GENERATE" in intent or any(kw in user_input.lower() for kw in ["нарисуй", "сгенерируй", "создай", "картинку", "арт", "фотообои", "превью", "обложк"]):
+            st.info(f"🌐 Создаю превью/изображение: '{user_input}'...")
             
+            # Улучшенный промпт генерации с фокусом на превью/обложки
             try:
                 translation_response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
-                        {"role": "system", "content": "Translate the user prompt into a detailed English image generation prompt. Output ONLY the translated prompt text."},
+                        {"role": "system", "content": "You are an expert prompt engineer for YouTube/TikTok thumbnails and epic digital art. Translate the user prompt into a highly detailed, cinematic, vibrant, high-contrast English image generation prompt optimized for striking thumbnails. Output ONLY the translated prompt text."},
                         {"role": "user", "content": user_input}
                     ],
                     max_tokens=200
                 )
-                english_prompt = translation_response.choices[0].message.content.strip()
+                english_prompt = translation_response.choices[0].message.content.strip() + ", striking YouTube thumbnail style, vibrant colors, highly detailed, 4k resolution"
             except:
-                english_prompt = user_input
+                english_prompt = user_input + ", vibrant YouTube thumbnail style"
 
             headers = {
                 "Authorization": f"Bearer {STABILITY_API_KEY}",
@@ -327,10 +318,10 @@ if user_input:
                 response = requests.post(STABILITY_GENERATE_URL, headers=headers, files=files)
                 if response.status_code == 200:
                     st.success("Готово!")
-                    st.image(response.content, caption=f"Запрос: {user_input}")
+                    st.image(response.content, caption=f"Превью/Запрос: {user_input}")
                     st.session_state.messages.append({
                         "role": "assistant",
-                        "content": f"Сгенерировал по запросу: {user_input}",
+                        "content": f"Создал превью по запросу: {user_input}",
                         "image": response.content
                     })
                 else:
