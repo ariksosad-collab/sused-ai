@@ -15,7 +15,7 @@ STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpai
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS + Стрелочка слева вверху + Кот поверх Manage app
+# CSS + Идеальная стрелочка и плавная панель чатов + Кот поверх Manage app
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -75,7 +75,38 @@ st.markdown("""
         100% { background-position: -10px 60px; }
     }
 
-    /* Стрелочки для истории чатов в сайдбаре */
+    /* Стильная кнопка-стрелочка в шапке */
+    .custom-sidebar-btn {
+        background: rgba(0, 255, 200, 0.1);
+        border: 1px solid rgba(0, 255, 200, 0.4);
+        color: #00ffc4;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 0 10px rgba(0, 255, 200, 0.1);
+        user-select: none;
+    }
+    .custom-sidebar-btn:hover {
+        background: rgba(0, 255, 200, 0.25);
+        box-shadow: 0 0 15px rgba(0, 255, 200, 0.4);
+        transform: scale(1.05);
+    }
+
+    /* Шапка сайта */
+    .header-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+
+    /* Сайдбар плавная подсветка элементов */
     [data-testid="stSidebar"] .element-container div p {
         transition: all 0.2s ease;
         cursor: pointer;
@@ -186,12 +217,12 @@ if st.session_state.sidebar_state:
         else:
             st.info("История пуста.")
 
-# Шапка со стрелочкой слева вверху для управления чатами
-col_arrow, col_title = st.columns([1, 15])
+# Шапка со стрелочкой слева и названием
+col_arrow, col_title = st.columns([0.08, 0.92])
 with col_arrow:
     st.markdown("<br>", unsafe_allow_html=True)
     arrow_symbol = "◀" if st.session_state.sidebar_state else "▶"
-    if st.button(arrow_symbol, help="Открыть/Закрыть сохраненные чаты", use_container_width=True):
+    if st.button(arrow_symbol, help="Открыть/Закрыть сохраненные чаты"):
         st.session_state.sidebar_state = not st.session_state.sidebar_state
         st.rerun()
 with col_title:
