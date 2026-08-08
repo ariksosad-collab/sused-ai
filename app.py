@@ -101,34 +101,34 @@ st.markdown(
 if "messages" not in st.session_state:
   st.session_state.messages = []
 if "current_tab" not in st.session_state:
-  st.session_state.current_tab = "💬 Чат"
+  st.session_state.current_tab = "💬 Чат с ИИ"
 
-# Боковое меню
+# --- БОКОВАЯ ПАНЕЛЬ С КНОПКАМИ НАВИГАЦИИ ---
 with st.sidebar:
-  st.markdown("### ✨ Gemini Меню")
+  st.markdown("### ✨ Sused Меню")
   st.divider()
 
   if st.button("✏️ Новый чат", use_container_width=True):
     st.session_state.messages = []
-    st.session_state.current_tab = "💬 Чат"
-    st.rerun()
-
-  if st.button("🎥 Видео / Визуал", use_container_width=True):
-    st.session_state.current_tab = "🎥 Видео"
+    st.session_state.current_tab = "💬 Чат с ИИ"
     st.rerun()
 
   if st.button("💬 Чат с ИИ", use_container_width=True):
-    st.session_state.current_tab = "💬 Чат"
+    st.session_state.current_tab = "💬 Чат с ИИ"
+    st.rerun()
+
+  if st.button("🎥 Бесплатное видео / Визуал", use_container_width=True):
+    st.session_state.current_tab = "🎥 Видео"
     st.rerun()
 
   st.divider()
-  st.markdown("**Недавние чаты:**")
+  st.markdown("**История запросов:**")
   if st.session_state.messages:
     for msg in st.session_state.messages:
       if msg["role"] == "user":
-        st.text(f"• {msg['content'][:25]}...")
+        st.text(f"• {msg['content'][:22]}...")
   else:
-    st.caption("История пока пуста")
+    st.caption("Пока пусто")
 
 st.title("🤖 Sused AI Pro Max")
 st.markdown('<div class="rainbow-track"></div>', unsafe_allow_html=True)
@@ -137,39 +137,49 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1", api_key=groq_api_key
 )
 
-# Вкладка генерации визуала (бесплатно)
+# --- ВКЛАДКА: БЕСПЛАТНАЯ ГЕНЕРАЦИЯ ВИДЕО / ВИЗУАЛА ---
 if st.session_state.current_tab == "🎥 Видео":
-  st.subheader("🎥 Бесплатная генерация визуала / кадров")
-  st.write("Опиши подробно сцену, и ИИ сгенерирует изображение бесплатно.")
+  st.subheader("🎥 Бесплатная генерация визуала")
+  st.write("Опиши подробно сцену — сервис сгенерирует качественное изображение/анимацию бесплатно без кредитов.")
 
   video_prompt = st.text_area(
-      "✍️ Описание кадра:",
-      placeholder="Например: Cinematic view of a futuristic city...",
+      "✍️ Описание (промпт):",
+      placeholder="Например: Cinematic camera sweep through a futuristic neon city...",
   )
 
-  if st.button("🚀 Создать бесплатно", use_container_width=True):
+  if st.button("🚀 Создать видео/кадр бесплатно", use_container_width=True):
     if video_prompt:
-      with st.spinner("✨ Генерация..."):
+      with st.spinner("✨ Генерация кадра..."):
         try:
-          encoded_prompt = urllib.parse.quote(
-              video_prompt + ", cinematic lighting, 4k"
+          # Переводим запрос на английский для лучшего качества генерации
+          translation_response = client.chat.completions.create(
+              model="llama-3.3-70b-versatile",
+              messages=[
+                  {"role": "system", "content": "Translate user prompt into detailed English visual/cinematic generation prompt. Output ONLY the prompt text."},
+                  {"role": "user", "content": video_prompt}
+              ],
+              max_tokens=150
           )
-          free_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=576&nologo=true"
+          english_prompt = translation_response.choices[0].message.content.strip() + ", cinematic lighting, 4k, smooth animation style"
+        except:
+          english_prompt = video_prompt + ", cinematic lighting, 4k"
 
-          st.success("✨ Готово!")
-          st.image(free_image_url, caption=f"Запрос: {video_prompt}")
+        encoded_prompt = urllib.parse.quote(english_prompt)
+        # Используем бесплатный генератор без ключей
+        free_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=576&nologo=true"
 
-          st.session_state.messages.append({
-              "role": "assistant",
-              "content": f"Сгенерировал визуал: {video_prompt}",
-              "image_url": free_image_url,
-          })
-        except Exception as e:
-          st.error(f"Ошибка: {e}")
+        st.success("✨ Готово!")
+        st.image(free_image_url, caption=f"Запрос: {video_prompt}")
+
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": f"Сгенерировал визуал по запросу: {video_prompt}",
+            "image_url": free_image_url,
+        })
     else:
-      st.warning("Введи описание!")
+      st.warning("Введи описание для генерации!")
 
-# Вкладка чата
+# --- ВКЛАДКА: ЧАТ И РЕЖИМЫ ИИ ---
 else:
   ai_mode = st.radio(
       "🎯 Выбери режим работы ИИ:",
@@ -188,9 +198,9 @@ else:
         st.image(message["image_url"])
 
   uploaded_file = st.file_uploader(
-      "🖼️ Загрузить картинку (необязательно)", type=["png", "jpg", "jpeg"]
+      "🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=["png", "jpg", "jpeg"]
   )
-  user_input = st.chat_input("Напиши запрос...")
+  user_input = st.chat_input("Напиши запрос, скинь ссылку на TikTok или попроси нарисовать...")
 
   if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -204,10 +214,7 @@ else:
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "Reply ONLY with 'GENERATE' if user wants to draw/create"
-                        " an image, or 'CHAT'."
-                    ),
+                    "content": "Analyze user intent. Reply ONLY with 'GENERATE' if they want to create/draw a new image, or 'CHAT' for text.",
                 },
                 {"role": "user", "content": user_input},
             ],
@@ -246,18 +253,17 @@ else:
         message_placeholder = st.empty()
         try:
           base_identity = (
-              "Твой создатель, разработчик и босс — Лёва (пользователь)."
+              "Твой создатель, разработчик и босс — Лёва (то есть пользователь)."
           )
           if "Игровой" in ai_mode:
-            system_prompt = f"Ты — Sused AI в игровом режиме. {base_identity}"
+            system_prompt = f"Ты — Sused AI в игровом режиме. {base_identity} Разбираешься в Minecraft, серверах и модах."
           elif "Глубокий" in ai_mode:
             system_prompt = (
-                f"Ты — Sused AI в режиме глубокого анализа. {base_identity}"
+                f"Ты — Sused AI в режиме глубокого анализа. {base_identity} Пиши подробный код и ответы."
             )
           else:
             system_prompt = (
-                f"Ты — Sused AI в мемном режиме. {base_identity} Юмори и"
-                " используй сленг."
+                f"Ты — Sused AI в мемном режиме. {base_identity} Юмори, используй сленг и мемы."
             )
 
           messages_for_llm = [
