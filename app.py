@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 from openai import OpenAI
-import urllib.parse
 
 # Настройка ключа Groq для чата
 try:
@@ -11,7 +10,7 @@ except:
 
 st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
 
-# --- СТИЛИ С ФИКСИРОВАННЫМ И ВИДИМЫМ САЙДБАРОМ ---
+# --- УЛЬТРА-ДИЗАЙН И КИБЕРПАНК СТИЛИ ---
 st.markdown(
     """
 <style>
@@ -20,46 +19,41 @@ st.markdown(
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* ЖЕСТКАЯ ФИКСАЦИЯ САЙДБАРА (чтобы никогда не пропадал) */
+    /* Жесткая фиксация сайдбара */
     [data-testid="stSidebar"] {
-        background-color: #070d10 !important;
-        border-right: 1px solid rgba(0, 255, 204, 0.1);
+        background-color: #050b0f !important;
+        border-right: 1px solid rgba(0, 255, 204, 0.15);
         min-width: 280px !important;
         max-width: 280px !important;
-        transform: none !important;
-        visibility: visible !important;
-        display: block !important;
     }
-    
-    /* Убираем лишние элементы управления шапкой, но оставляем доступность панели */
     [data-testid="collapsedControl"] {
         display: none !important;
     }
 
-    /* Общий фон и шрифт */
+    /* Общий фон */
     .stApp {
-        background-color: #0a1118;
+        background-color: #070e14;
         color: #e2e8f0;
         background-image: 
-            radial-gradient(circle at 10% 15%, rgba(0, 255, 170, 0.08) 0%, transparent 40%),
-            radial-gradient(circle at 90% 85%, rgba(0, 102, 255, 0.08) 0%, transparent 40%),
-            linear-gradient(180deg, #070d10 0%, #03070a 100%);
+            radial-gradient(circle at 10% 10%, rgba(0, 255, 170, 0.06) 0%, transparent 40%),
+            radial-gradient(circle at 90% 90%, rgba(0, 102, 255, 0.06) 0%, transparent 40%),
+            linear-gradient(180deg, #070e14 0%, #030609 100%);
         background-attachment: fixed;
     }
 
-    /* Поля ввода */
+    /* Кастомизация полей ввода */
     .stTextInput input, .stTextArea textarea {
-        background-color: #111b24 !important;
+        background-color: #0d1620 !important;
         color: #ffffff !important;
-        border: 1px solid rgba(0, 255, 204, 0.2) !important;
+        border: 1px solid rgba(0, 255, 204, 0.25) !important;
         border-radius: 10px !important;
     }
     .stTextInput input:focus, .stTextArea textarea:focus {
         border-color: #00ffcc !important;
-        box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+        box-shadow: 0 0 12px rgba(0, 255, 204, 0.3);
     }
 
-    /* Радужная анимированная полоса */
+    /* Радужная линия */
     .rainbow-track {
         width: 100%;
         height: 4px;
@@ -67,7 +61,7 @@ st.markdown(
         background-size: 400% 400%;
         animation: rainbow-flow 6s linear infinite;
         border-radius: 4px;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
     }
 
@@ -93,18 +87,28 @@ st.markdown(
         background: linear-gradient(135deg, #00ffcc 0%, #00b4d8 100%);
         color: #03070a;
     }
+
+    /* Кастомные контейнеры чата */
+    [data-testid="stChatMessage"] {
+        background-color: #0d1620 !important;
+        border: 1px solid rgba(0, 255, 204, 0.1) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        padding: 15px;
+        margin-bottom: 12px;
+    }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Инициализация состояний
+# Состояния
 if "messages" not in st.session_state:
   st.session_state.messages = []
 if "current_tab" not in st.session_state:
   st.session_state.current_tab = "💬 Чат с ИИ"
 
-# --- БОКОВАЯ ПАНЕЛЬ (ГАРАНТИРОВАННО ВИДИМАЯ) ---
+# --- БОКОВАЯ ПАНЕЛЬ ---
 with st.sidebar:
   st.markdown("### ✨ Sused Control Hub")
   st.divider()
@@ -127,7 +131,7 @@ with st.sidebar:
   if st.session_state.messages:
     for msg in st.session_state.messages:
       if msg["role"] == "user":
-        st.text(f"• {msg['content'][:20]}...")
+        st.text(f"• {msg['content'][:22]}...")
   else:
     st.caption("История пуста")
 
@@ -141,7 +145,7 @@ client = OpenAI(
 # --- ВКЛАДКА: СТУДИЯ КОДА И УТИЛИТ ---
 if st.session_state.current_tab == "🛠️ Утилиты":
   st.subheader("🛠️ Элитная студия разработки")
-  st.write("Генератор чистого кода без заглушек и обрубков (оптимизирован под Minecraft 1.21.4 / Fabric / Python):")
+  st.write("Генератор кода с выбором уровня интеллекта и проработки:")
 
   tool_type = st.selectbox(
       "📌 Выбери инструмент:",
@@ -149,20 +153,35 @@ if st.session_state.current_tab == "🛠️ Утилиты":
   )
 
   if tool_type == "📝 Генератор кода (Java / Python / Mods)":
-    code_task = st.text_area("✍️ Подробно опиши задачу для кода:", placeholder="Например: напиши AimAssist под Fabric 1.21.4 с плавной интерполяцией и raycast проверкой стен...")
+    # Выбор режима кодинга
+    code_mode = st.radio(
+        "🧠 Режим генерации кода:",
+        [
+            "⚡ Умный режим (Хардкор: чистый рабочий код без заглушек, математика векторов, Fabric 1.21.4)",
+            "🟢 Обычный режим (Базовый, простой код для учебы или быстрых задач)"
+        ],
+        horizontal=False
+    )
+
+    code_task = st.text_area("✍️ Подробно опиши задачу для кода:", placeholder="Например: напиши AimAssist под Fabric 1.21.4 с плавной интерполяцией...")
     lang = st.radio("Язык / Платформа:", ["Java (Minecraft Fabric)", "Python", "Другое"], horizontal=True)
 
     if st.button("🚀 Запустить генерацию кода", use_container_width=True):
       if code_task:
-        with st.spinner("💻 ИИ пишет код с полной реализацией..."):
+        with st.spinner("💻 ИИ пишет код..."):
           try:
-            dev_system_prompt = (
-                "Ты — элитный старший разработчик софта и модификаций для Minecraft (Fabric 1.21.4, Yarn маппинги) и эксперт по Python/Java. "
-                "Твоя задача — писать абсолютно чистый, рабочий, законченный код от начала и до конца. "
-                "КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО использовать ленивые комментарии вроде '// тут допишите сами', '// ...', '// TODO' или оставлять пустые методы. "
-                "Всегда пиши полную логику: если это AimAssist, TriggerBot или модули клиента — пиши реальную математику векторов, расчеты Yaw/Pitch, плавную доводку и Raycast-проверки. "
-                "Выдавай код строго в блоках разметки Markdown."
-            )
+            if "Умный режим" in code_mode:
+              dev_system_prompt = (
+                  "Ты — элитный старший разработчик софта и модификаций для Minecraft (Fabric 1.21.4, Yarn маппинги) и эксперт по Python/Java. "
+                  "Твоя задача — писать абсолютно чистый, рабочий, законченный код от начала и до конца. "
+                  "КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО использовать ленивые комментарии вроде '// тут допишите сами', '// ...', '// TODO' или оставлять пустые методы. "
+                  "Всегда пиши полную логику: если это AimAssist, TriggerBot или модули клиента — пиши реальную математику векторов, расчеты Yaw/Pitch, плавную доводку и Raycast-проверки. "
+                  "Выдавай код строго в блоках разметки Markdown."
+              )
+            else:
+              dev_system_prompt = (
+                  "Ты — помощник по программированию. Пиши понятный, простой и рабочий код без лишней сложности, с базовыми комментариями."
+              )
             
             resp = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -180,7 +199,7 @@ if st.session_state.current_tab == "🛠️ Утилиты":
         st.warning("Введи задачу для кода!")
 
   else:
-    fp_task = st.text_area("✍️ Ситуация для авто-ответа на FunPay:", placeholder="Например: покупатель оплатил донат-кейс на сервере, нужно выдать товар и поблагодарить...")
+    fp_task = st.text_area("✍️ Ситуация для авто-ответа на FunPay:", placeholder="Например: покупатель оплатил донат-кейс на сервере, нужно выдать товар...")
     if st.button("🚀 Сгенерировать шаблон", use_container_width=True):
       if fp_task:
         with st.spinner("✍️ Создаю профессиональный шаблон..."):
