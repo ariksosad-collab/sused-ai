@@ -19,89 +19,148 @@ if "bg_theme" not in st.session_state:
 if "fx_effect" not in st.session_state:
     st.session_state.fx_effect = "Без эффекта"
 
-bg_colors = {
-    "Темная": "#131314",
-    "Светлая": "#f0f2f6",
-    "Неоновая": "#0a0a1a",
-    "Киберпанк": "#1a001a"
-}
-text_colors = {
-    "Темная": "#e3e3e3",
-    "Светлая": "#111111",
-    "Неоновая": "#00ffff",
-    "Киберпанк": "#ff00ff"
+# Продвинутые красивые темы
+bg_styles = {
+    "Темная": {"bg": "#131314", "card": "#1e1e24", "text": "#e3e3e3", "border": "#333"},
+    "Светлая": {"bg": "#f4f6f9", "card": "#ffffff", "text": "#222222", "border": "#d1d5db"},
+    "Неоновая": {"bg": "#050510", "card": "#0f0f24", "text": "#00ffff", "border": "#00ffff55"},
+    "Киберпанк": {"bg": "#12001a", "card": "#240036", "text": "#ff00ff", "border": "#ff00ff55"}
 }
 
-current_bg = bg_colors.get(st.session_state.bg_theme, "#131314")
-current_txt = text_colors.get(st.session_state.bg_theme, "#e3e3e3")
+t = bg_styles.get(st.session_state.bg_theme, bg_styles["Темная"])
 
-# Обычная строка без f, чтобы Python не ругался на скобки JS
-st.markdown("""
+# CSS + JS для точного отслеживания курсора внутри баннера и красивых эффектов фона
+st.markdown(f"""
 <style>
-    .stApp {
-        background-color: """ + current_bg + """;
-        color: """ + current_txt + """;
-    }
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    .stApp {{
+        background-color: {t["bg"]};
+        color: {t["text"]};
+    }}
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
 
-    #rainbow-banner {
+    /* Баннер с радужным шлейфом */
+    .rainbow-container {{
         width: 100%;
-        height: 120px;
-        background: linear-gradient(90deg, #1f1f23, #2d2d38, #1f1f23);
-        border-radius: 12px;
+        height: 130px;
+        background: linear-gradient(135deg, {t["card"]}, #111116);
+        border-radius: 16px;
         position: relative;
         overflow: hidden;
         margin-bottom: 20px;
-        border: 1px solid #333;
+        border: 2px solid {t["border"]};
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: crosshair;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     }
-    #rainbow-banner h2 {
+    .rainbow-container h2 {{
         background: linear-gradient(90deg, #ff0055, #ff7f00, #ffff00, #00ff66, #00ffff, #9900ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-weight: bold;
+        font-weight: 900;
         margin: 0;
-    }
+        z-index: 2;
+        pointer-events: none;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }}
+
+    /* Стили элементов под тему */
+    div[data-baseweb="select"] > div {{
+        background-color: {t["card"]} !important;
+        color: {t["text"]} !important;
+        border-color: {t["border"]} !important;
+    }}
 </style>
 
 <script>
-document.addEventListener('mousemove', function(e) {
-    let x = e.clientX;
-    let y = e.clientY;
-    
-    if (y < 250) {
-        let dot = document.createElement('div');
-        dot.style.position = 'fixed';
-        dot.style.left = x + 'px';
-        dot.style.top = y + 'px';
-        dot.style.width = '12px';
-        dot.style.height = '12px';
-        dot.style.borderRadius = '50%';
-        dot.style.pointerEvents = 'none';
-        dot.style.zIndex = '999999';
-        
-        const colors = ['#ff0055', '#ff7f00', '#ffff00', '#00ff66', '#00ffff', '#0066ff', '#9900ff'];
-        dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        dot.style.boxShadow = '0 0 10px ' + dot.style.backgroundColor;
-        
-        document.body.appendChild(dot);
-        
-        setTimeout(() => {
-            dot.style.transition = 'all 0.5s ease';
-            dot.style.transform = 'scale(0.2)';
-            dot.style.opacity = '0';
-        }, 30);
-        
-        setTimeout(() => {
-            dot.remove();
-        }, 530);
+// Точное отслеживание движения мыши строго внутри баннера
+const checkBanner = setInterval(() => {
+    const banner = window.parent.document.getElementById('interactive-banner');
+    if (banner) {
+        banner.onmousemove = function(e) {
+            let rect = banner.getBoundingClientRect();
+            let x = e.clientX;
+            let y = e.clientY;
+            
+            let dot = document.createElement('div');
+            dot.style.position = 'fixed';
+            dot.style.left = x + 'px';
+            dot.style.top = y + 'px';
+            dot.style.width = '14px';
+            dot.style.height = '14px';
+            dot.style.borderRadius = '50%';
+            dot.style.pointerEvents = 'none';
+            dot.style.zIndex = '999999';
+            
+            const colors = ['#ff0055', '#ff7f00', '#ffff00', '#00ff66', '#00ffff', '#0066ff', '#9900ff'];
+            dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            dot.style.boxShadow = '0 0 12px ' + dot.style.backgroundColor;
+            
+            document.body.appendChild(dot);
+            
+            setTimeout(() => {
+                dot.style.transition = 'all 0.6s ease-out';
+                dot.style.transform = 'scale(0.1) translateY(-20px)';
+                dot.style.opacity = '0';
+            }, 20);
+            
+            setTimeout(() => {
+                dot.remove();
+            }, 620);
+        };
+        clearInterval(checkBanner);
     }
-});
+}, 200);
 </script>
 """, unsafe_allow_html=True)
+
+# --- ЖИВЫЕ АНИМИРОВАННЫЕ ЭФФЕКТЫ ФОНА ---
+if st.session_state.fx_effect == "🌧️ Дождь":
+    st.markdown("""
+    <style>
+    @keyframes falling-rain {
+        0% { background-position: 0px 0px; }
+        100% { background-position: -100px 800px; }
+    }
+    .stApp {
+        background-image: linear-gradient(0deg, rgba(0, 183, 255, 0.15) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(0, 183, 255, 0.05) 1px, transparent 1px);
+        background-size: 60px 100px;
+        animation: falling-rain 0.6s linear infinite;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+elif st.session_state.fx_effect == "⚡ Молнии/Гроза":
+    st.markdown("""
+    <style>
+    @keyframes lightning {
+        0%, 85%, 93%, 100% { filter: brightness(1); }
+        88% { filter: brightness(2.2); background-color: #1a2a40; }
+        90% { filter: brightness(0.4); }
+        91% { filter: brightness(2.5); background-color: #ffffff; }
+    }
+    .stApp {
+        animation: lightning 5s infinite;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+elif st.session_state.fx_effect == "✨ Звезды":
+    st.markdown("""
+    <style>
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+    }
+    .stApp {
+        background-image: radial-gradient(white 1.5px, transparent 0), radial-gradient(cyan 1px, transparent 0);
+        background-size: 70px 70px, 50px 50px;
+        background-position: 0 0, 25px 25px;
+        animation: twinkle 3s ease-in-out infinite;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- ПРАВАЯ ПАНЕЛЬ СОХРАНЕННЫХ ЧАТОВ ---
 with st.sidebar:
@@ -129,56 +188,19 @@ with col_title:
     st.title("🤖 Sused AI Pro Max")
 
 with col_settings:
-    st.markdown("<div style='text-align: right;'>⚙️ <b>Настройки темы и эффектов</b></div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: right;'>⚙️ <b>Кастомизация</b></div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
-        st.session_state.bg_theme = st.selectbox("Фон", ["Темная", "Светлая", "Неоновая", "Киберпанк"], label_visibility="collapsed")
+        st.session_state.bg_theme = st.selectbox("Тема", ["Темная", "Светлая", "Неоновая", "Киберпанк"], label_visibility="collapsed")
     with c2:
         st.session_state.fx_effect = st.selectbox("Эффект", ["Без эффекта", "🌧️ Дождь", "⚡ Молнии/Гроза", "✨ Звезды"], label_visibility="collapsed")
 
-# --- ВЕРХНИЙ ДЛИННЫЙ БАННЕР С РАДУЖНЫМ КУРСОРОМ ---
+# --- ИНТЕРАКТИВНЫЙ ВЕРХНИЙ БАННЕР С РАДУЖНЫМ ШЛЕЙФОМ ---
 st.markdown("""
-<div id="rainbow-banner">
-    <h2>✨ Наведи курсор сюда для радужного шлейфа! ✨</h2>
+<div id="interactive-banner" class="rainbow-container">
+    <h2>✨ Наведи курсор сюда для крутого радужного шлейфа! ✨</h2>
 </div>
 """, unsafe_allow_html=True)
-
-# --- ВИЗУАЛЬНЫЕ ЭФФЕКТЫ ---
-if st.session_state.fx_effect == "🌧️ Дождь":
-    st.markdown("""
-    <style>
-    @keyframes rain {
-        0% {background-position: 0px 0px;}
-        100% {background-position: -50px 500px;}
-    }
-    .stApp {
-        background-image: linear-gradient(0deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-        background-size: 50px 50px;
-        animation: rain 0.8s linear infinite;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-elif st.session_state.fx_effect == "⚡ Молнии/Гроза":
-    st.markdown("""
-    <style>
-    @keyframes flash {
-        0%, 90%, 95%, 100% {opacity: 1;}
-        92%, 97% {opacity: 0.3; filter: brightness(1.8); background-color: #334466;}
-    }
-    .stApp {
-        animation: flash 4s infinite;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-elif st.session_state.fx_effect == "✨ Звезды":
-    st.markdown("""
-    <style>
-    .stApp {
-        background-image: radial-gradient(white 1px, transparent 0);
-        background-size: 40px 40px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 # --- ЛОГИКА ЧАТА И ГЕНЕРАЦИИ ---
 client = OpenAI(
@@ -259,7 +281,7 @@ if user_input:
                 }
                 files = {'image': ('input.jpg', uploaded_file.getvalue(), 'image/jpeg')}
                 headers = {
-                    "Authorization": f"Bearer {STBILITY_API_KEY}" if 'STBILITY_API_KEY' in locals() else f"Bearer {STABILITY_API_KEY}",
+                    "Authorization": f"Bearer {STABILITY_API_KEY}",
                     "Accept": "image/*"
                 }
 
