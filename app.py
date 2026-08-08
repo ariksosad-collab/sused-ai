@@ -12,41 +12,55 @@ except:
 STABILITY_GENERATE_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 STABILITY_INPAINT_URL = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 
-# Настройка страницы с минималистичным wide-макетом
-st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="centered")
+# Возвращаем wide макет, чтобы боковая панель (стрелочка) работала правильно
+st.set_page_config(page_title="Sused AI Pro Max", page_icon="🤖", layout="wide")
 
-# Стили: минимализм, скрытие верхнего меню Streamlit/GitHub/Share, анимированный дождь и кастомные картинки
+# Минимализм: скрываем верхнюю панель Streamlit, ставим анимированный фон с дождем и красивую радугу
 st.markdown("""
 <style>
-    /* Скрываем стандартные элементы Streamlit, Share, GitHub, Header и Footer */
+    /* Скрываем стандартную шапку, GitHub и Share */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     .stAppToolbar {display: none !important;}
     
-    /* Основной фон с анимированным дождем */
+    /* Анимированный фон с эффектом стекающих капель дождя по стеклу */
     .stApp {
-        background-color: #0b0f19;
+        background-color: #0b131a;
         color: #e3e3e3;
-        background-image: linear-gradient(0deg, rgba(0, 183, 255, 0.12) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(0, 183, 255, 0.04) 1px, transparent 1px);
-        background-size: 50px 80px;
-        animation: falling-rain 0.6s linear infinite;
+        background-image: 
+            radial-gradient(circle at 20% 30%, rgba(0, 150, 160, 0.15) 0%, transparent 40%),
+            radial-gradient(circle at 80% 70%, rgba(0, 100, 130, 0.1) 0%, transparent 50%),
+            linear-gradient(180deg, rgba(11, 19, 26, 0.8) 0%, rgba(5, 10, 15, 0.95) 100%);
+        background-attachment: fixed;
+        position: relative;
     }
-    
-    @keyframes falling-rain {
+
+    /* Эффект капель через анимированные наложения */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 0);
+        background-size: 35px 35px;
+        animation: rain-drops 1.2s linear infinite;
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    @keyframes rain-drops {
         0% { background-position: 0px 0px; }
-        100% { background-position: -40px 600px; }
+        100% { background-position: -15px 70px; }
     }
 
     /* Компактный размер для сгенерированных изображений */
     img {
         max-width: 450px !important;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     }
 
-    /* Интерактивная анимированная радужная полоса */
+    /* Анимированная радужная полоса */
     .rainbow-track {
         width: 100%;
         height: 45px;
@@ -68,7 +82,7 @@ st.markdown("""
 </style>
 
 <script>
-// Шлейф за курсором внутри радужной полосы
+// Интерактивный шлейф за курсором в радужной полосе
 const checkBanner = setInterval(() => {
     const banner = window.parent.document.getElementById('rainbow-banner');
     if (banner) {
@@ -108,9 +122,9 @@ const checkBanner = setInterval(() => {
 </script>
 """, unsafe_allow_html=True)
 
-# --- БОКОВАЯ ПАНЕЛЬ ---
+# --- БОКОВАЯ ПАНЕЛЬ (ИСТОРИЯ И СТРЕЛОЧКА) ---
 with st.sidebar:
-    st.title("💬 Чаты")
+    st.title("💬 Сохраненные чаты")
     if st.button("➕ Новая сессия", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
@@ -119,13 +133,15 @@ with st.sidebar:
         for i, msg in enumerate(st.session_state.messages):
             if msg["role"] == "user":
                 st.text(f"👤 {i+1}. {msg['content'][:18]}...")
+    else:
+        st.info("История пуста.")
 
 st.title("🤖 Sused AI Pro Max")
 
-# Радужная полоса с интерактивом
+# Радужная полоса
 st.markdown('<div id="rainbow-banner" class="rainbow-track"></div>', unsafe_allow_html=True)
 
-# Инициализация истории чата
+# Инициализация клиента и истории
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=groq_api_key
@@ -140,10 +156,10 @@ for message in st.session_state.messages:
         if "image" in message:
             st.image(message["image"])
 
-# Удобный инструмент для загрузки / вставки картинок (Inpainting)
+# Загрузчик файлов для дорисовки / редактирования картинок
 uploaded_file = st.file_uploader("🖼️ Загрузить картинку для изменения или дорисовки (необязательно)", type=['png', 'jpg', 'jpeg'])
 
-user_input = st.chat_input("Напиши запрос (нарисуй кота, дорисовывай крылья и т.д.) или задай вопрос...")
+user_input = st.chat_input("Напиши запрос (например: нарисуй кота, измени фон и т.д.) или задай вопрос...")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -151,7 +167,7 @@ if user_input:
         st.markdown(user_input)
 
     with st.chat_message("assistant"):
-        # Определяем намерение пользователя через LLM
+        # Умное определение намерения пользователя
         try:
             intent_response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
